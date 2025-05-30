@@ -24,26 +24,40 @@ interface GoalFormProps {
   initialTask?: Task | null;
 }
 
-const emptyTask: Task = {
+// Static default values for a new task to prevent hydration mismatches
+const EMPTY_TASK_STATIC_DEFAULTS: Task = {
   id: '',
   title: '',
   description: '',
   xp: 10,
   isCompleted: false,
   subTasks: [],
-  createdAt: new Date().toISOString(),
+  createdAt: "1970-01-01T00:00:00.000Z", // Placeholder, will be updated
   timeAllocation: 30,
-  dueDate: format(new Date(), "yyyy-MM-dd"),
+  dueDate: "1970-01-01", // Placeholder, will be updated
   category: TASK_CATEGORIES[0],
+  reminderEnabled: false,
 };
 
 export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFormProps) {
-  const [task, setTask] = useState<Task>(initialTask || emptyTask);
+  const [task, setTask] = useState<Task>(initialTask || EMPTY_TASK_STATIC_DEFAULTS);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskXP, setNewSubtaskXP] = useState(5);
 
   useEffect(() => {
-    setTask(initialTask || emptyTask);
+    if (isOpen) {
+      if (initialTask) {
+        setTask(initialTask);
+      } else {
+        // For a new task, initialize with current dates after mount
+        setTask({
+          ...EMPTY_TASK_STATIC_DEFAULTS, // Start with static defaults
+          id: '', // Ensure ID is clear for a new task
+          createdAt: new Date().toISOString(),
+          dueDate: format(new Date(), "yyyy-MM-dd"),
+        });
+      }
+    }
   }, [initialTask, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -78,7 +92,7 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ ...task, id: task.id || String(Date.now()) });
+    onSubmit({ ...task, id: task.id || String(Date.now()) }); // Generate ID if it's a new task
     onOpenChange(false);
   };
 
@@ -97,7 +111,7 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
           </div>
           <div>
             <Label htmlFor="description" className="text-primary-foreground/80">Description (Optional)</Label>
-            <Textarea id="description" name="description" value={task.description} onChange={handleChange} className="bg-card/50 border-primary/30 focus:border-accent" />
+            <Textarea id="description" name="description" value={task.description || ''} onChange={handleChange} className="bg-card/50 border-primary/30 focus:border-accent" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -106,7 +120,7 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
             </div>
             <div>
               <Label htmlFor="timeAllocation" className="text-primary-foreground/80">Time Allocation (minutes)</Label>
-              <Input id="timeAllocation" name="timeAllocation" type="number" value={task.timeAllocation} onChange={handleChange} className="bg-card/50 border-primary/30 focus:border-accent" />
+              <Input id="timeAllocation" name="timeAllocation" type="number" value={task.timeAllocation || ''} onChange={handleChange} className="bg-card/50 border-primary/30 focus:border-accent" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -119,14 +133,14 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
                     className="w-full justify-start text-left font-normal bg-card/50 border-primary/30 hover:bg-card/70"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {task.dueDate ? format(parseISO(task.dueDate), "PPP") : <span>Pick a date</span>}
+                    {task.dueDate && task.dueDate !== EMPTY_TASK_STATIC_DEFAULTS.dueDate ? format(parseISO(task.dueDate), "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 glassmorphic" align="start">
                   <Calendar
                     mode="single"
-                    selected={task.dueDate ? parseISO(task.dueDate) : undefined}
-                    onSelect={(date) => setTask(prev => ({...prev, dueDate: date ? format(date, "yyyy-MM-dd") : prev.dueDate}))}
+                    selected={task.dueDate && task.dueDate !== EMPTY_TASK_STATIC_DEFAULTS.dueDate ? parseISO(task.dueDate) : undefined}
+                    onSelect={(date) => setTask(prev => ({...prev, dueDate: date ? format(date, "yyyy-MM-dd") : undefined}))}
                     initialFocus
                   />
                 </PopoverContent>
