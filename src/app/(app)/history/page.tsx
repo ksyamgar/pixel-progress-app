@@ -16,8 +16,8 @@ const mockHistoricalTasks: Task[] = [
   { id: "h1", title: "Old Project Deadline", xp: 100, isCompleted: true, subTasks: [], createdAt: "2024-05-10T10:00:00Z", dueDate: "2024-05-10", category: "work" },
   { id: "h2", title: "Learn Basic Spanish", xp: 150, isCompleted: false, subTasks: [], createdAt: "2024-05-15T10:00:00Z", dueDate: "2024-05-25", category: "study" },
   { id: "h3", title: "Fix Leaky Faucet", xp: 20, isCompleted: true, subTasks: [], createdAt: "2024-06-01T10:00:00Z", dueDate: "2024-06-01", category: "chore" },
-  { id: "h4", title: "Run 5k", xp: 50, isCompleted: true, subTasks: [], createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), dueDate: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], category: "fitness" },
-   { id: "h5", title: "Grocery Shopping", xp: 15, isCompleted: true, subTasks: [], createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), dueDate: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0], category: "chore" },
+  { id: "h4", title: "Run 5k", xp: 50, isCompleted: true, subTasks: [], createdAt: "2024-07-23T12:00:00.000Z", dueDate: "2024-07-23", category: "fitness" },
+  { id: "h5", title: "Grocery Shopping", xp: 15, isCompleted: true, subTasks: [], createdAt: "2024-07-26T12:00:00.000Z", dueDate: "2024-07-26", category: "chore" },
 ];
 
 export default function HistoryPage() {

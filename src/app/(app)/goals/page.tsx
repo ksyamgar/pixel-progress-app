@@ -10,9 +10,9 @@ import { PlusCircle, LayoutGrid, List } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 
 const initialTasks: Task[] = [
-  { id: "g1", title: "Master Tailwind CSS", description: "Complete advanced Tailwind course and build 3 projects.", xp: 200, isCompleted: false, subTasks: [{id: "g1s1", title: "Finish course videos", xp: 50, isCompleted: true}, {id: "g1s2", title: "Project 1", xp: 50, isCompleted: false}], createdAt: new Date().toISOString(), category: "study", dueDate: "2024-08-30", timeAllocation: 1200 },
-  { id: "g2", title: "Daily Fitness Routine", description: "Hit the gym 5 times a week.", xp: 50, isCompleted: false, subTasks: [], createdAt: new Date().toISOString(), category: "fitness", timeAllocation: 60 },
-  { id: "g3", title: "Develop Pixel Progress App", description: "Implement core features for the app.", xp: 500, isCompleted: false, subTasks: [], createdAt: new Date().toISOString(), category: "work", dueDate: "2024-09-15" },
+  { id: "g1", title: "Master Tailwind CSS", description: "Complete advanced Tailwind course and build 3 projects.", xp: 200, isCompleted: false, subTasks: [{id: "g1s1", title: "Finish course videos", xp: 50, isCompleted: true}, {id: "g1s2", title: "Project 1", xp: 50, isCompleted: false}], createdAt: "2024-07-28T10:00:00.000Z", category: "study", dueDate: "2024-08-30", timeAllocation: 1200 },
+  { id: "g2", title: "Daily Fitness Routine", description: "Hit the gym 5 times a week.", xp: 50, isCompleted: false, subTasks: [], createdAt: "2024-07-28T10:05:00.000Z", category: "fitness", timeAllocation: 60 },
+  { id: "g3", title: "Develop Pixel Progress App", description: "Implement core features for the app.", xp: 500, isCompleted: false, subTasks: [], createdAt: "2024-07-28T10:10:00.000Z", category: "work", dueDate: "2024-09-15" },
 ];
 
 
