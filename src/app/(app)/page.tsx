@@ -14,9 +14,9 @@ import Image from "next/image";
 
 // Mock Data
 const initialTasks: Task[] = [
-  { id: "1", title: "Complete UI Mockups", xp: 50, isCompleted: false, subTasks: [], createdAt: new Date().toISOString(), category: "work", timeAllocation: 120 },
-  { id: "2", title: "Morning Workout", xp: 30, isCompleted: true, subTasks: [], createdAt: new Date().toISOString(), category: "fitness", timeAllocation: 45 },
-  { id: "3", title: "Read Chapter 5", xp: 20, isCompleted: false, subTasks: [{id: '3a', title: 'Review notes', xp: 5, isCompleted: false}], createdAt: new Date().toISOString(), category: "study", timeAllocation: 60 },
+  { id: "1", title: "Complete UI Mockups", xp: 50, isCompleted: false, subTasks: [], createdAt: "2024-07-29T10:00:00.000Z", category: "work", timeAllocation: 120 },
+  { id: "2", title: "Morning Workout", xp: 30, isCompleted: true, subTasks: [], createdAt: "2024-07-29T08:00:00.000Z", category: "fitness", timeAllocation: 45 },
+  { id: "3", title: "Read Chapter 5", xp: 20, isCompleted: false, subTasks: [{id: '3a', title: 'Review notes', xp: 5, isCompleted: false}], createdAt: "2024-07-29T14:00:00.000Z", category: "study", timeAllocation: 60 },
 ];
 
 export default function DashboardPage() {
@@ -157,5 +157,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

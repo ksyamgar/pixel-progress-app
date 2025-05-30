@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
-import type { CalendarTaskEvent, Task } from '@/lib/types';
+import { useState, useMemo, useEffect } from 'react';
+import type { CalendarTaskEvent, Task } from "@/lib/types";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +18,15 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [currentMonth, setCurrentMonth] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const today = new Date();
+    setSelectedDate(today);
+    setCurrentMonth(startOfMonth(today));
+  }, []);
 
   const calendarEvents = useMemo(() => {
     return tasks.map(task => ({
@@ -65,6 +71,16 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
       </div>
     );
   };
+
+  if (!currentMonth) {
+    // Render a placeholder or loading state until currentMonth is set
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono">
+        <GlassCard className="md:col-span-2 p-0 min-h-[370px]" /> 
+        <GlassCard className="md:col-span-1 p-4 space-y-3 min-h-[300px]" />
+      </div>
+    );
+  }
 
 
   return (
@@ -131,5 +147,3 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
     </div>
   );
 }
-
-    
