@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Progress - Next.js App</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #f4f4f4; 
+            color: #333;
+            text-align: center; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container { 
+            max-width: 700px; 
+            padding: 30px; 
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #5a3e8a; /* A purple tone to match your app's theme */
+        }
+        p {
+            line-height: 1.6;
+        }
+        code {
+            background-color: #e9e9e9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>This is the Pixel Progress Next.js Application</h1>
+        <p>
+            If you are seeing this <code>index.html</code> page when deploying to Netlify, 
+            it might mean that your Netlify site is not correctly configured to build and serve this as a Next.js project.
+        </p>
+        <p>
+            For Next.js applications, Netlify typically handles the build process 
+            (e.g., running <code>npm run build</code> or <code>next build</code>) and serves the app 
+            from the generated <code>.next</code> directory automatically. 
+            A root <code>index.html</code> file like this one is usually not needed or displayed
+            when Netlify is correctly set up for Next.js.
+        </p>
+        <p>
+            Please ensure your Netlify deployment settings are configured for a Next.js application:
+            <ul>
+                <li><strong>Build command:</strong> <code>npm run build</code> (or <code>next build</code>)</li>
+                <li><strong>Publish directory:</strong> <code>.next</code></li>
+            </ul>
+        </p>
+        <p>
+            Your actual application should be accessible once these settings are correct.
+        </p>
+    </div>
+</body>
+</html>
