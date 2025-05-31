@@ -16,13 +16,13 @@ import { Header } from '@/components/layout/header';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, UploadCloud, Edit2, ChevronsLeft } from 'lucide-react';
+import { LogOut, UploadCloud, Edit2, ChevronsLeft, X } from 'lucide-react';
 import Image from 'next/image';
 
 // This new inner component will render the actual layout and can safely use the useSidebar hook
 function MainAppLayoutContent({ children }: { children: ReactNode }) {
-  const { state, isMobile, toggleSidebar } = useSidebar(); // Now called safely within SidebarProvider's context
-  const [userAvatar, setUserAvatar] = useState("https://placehold.co/100x100.png");
+  const { state, openMobile, isMobile, toggleSidebar, setOpenMobile } = useSidebar(); // Now called safely within SidebarProvider's context
+  const [userAvatar, setUserAvatar] = useState("https://placehold.co/60x60.png");
   const [userName, setUserName] = useState("Pixel User");
   const [isEditingName, setIsEditingName] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -59,13 +59,19 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <Sidebar variant="sidebar" collapsible="icon" className="border-r-border/30">
-        <SidebarHeader className="p-2">
+      <Sidebar variant="sidebar" collapsible="icon" className="border-r-border/30 text-xs">
+        <SidebarHeader className="p-1.5">
           <div className="flex justify-end items-center w-full mb-1 group-data-[collapsible=icon]:hidden">
             {/* Close button for expanded sidebar on desktop */}
             {state === 'expanded' && !isMobile && (
-              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-7 w-7 text-sidebar-foreground hover:text-accent-foreground">
-                <ChevronsLeft className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-6 w-6 text-sidebar-foreground hover:text-accent-foreground">
+                <ChevronsLeft className="h-3.5 w-3.5" />
+              </Button>
+            )}
+             {/* Close button for open sidebar on mobile */}
+            {isMobile && openMobile && (
+              <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)} className="h-6 w-6 text-sidebar-foreground hover:text-accent-foreground">
+                <X className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -75,13 +81,13 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
               <Image
                 src={userAvatar}
                 alt="User Avatar"
-                data-ai-hint="pixel game logo"
-                width={60}
-                height={60}
+                data-ai-hint="pixel game avatar"
+                width={50}
+                height={50}
                 className="rounded-full border-2 border-primary mb-1 group-data-[collapsible=icon]:hidden object-cover"
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 rounded-full transition-opacity group-data-[collapsible=icon]:hidden">
-                <UploadCloud className="h-5 w-5 text-white/80" />
+                <UploadCloud className="h-4 w-4 text-white/80" />
               </div>
             </div>
             <input
@@ -91,7 +97,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
               accept="image/*"
               className="hidden"
             />
-             <div className="flex items-center gap-1 mt-1 group-data-[collapsible=icon]:hidden">
+             <div className="flex items-center gap-0.5 mt-0.5 group-data-[collapsible=icon]:hidden">
               {isEditingName ? (
                 <Input
                   type="text"
@@ -99,24 +105,24 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
                   onBlur={(e) => handleUserNameSave(e.target.value)}
                   onKeyDown={handleUserNameKeyDown}
                   autoFocus
-                  className="font-pixel text-base h-7 bg-card/70 border-primary/50 text-primary text-center"
-                  style={{ minWidth: '100px', maxWidth: '150px' }}
+                  className="font-pixel text-sm h-6 bg-card/70 border-primary/50 text-primary text-center"
+                  style={{ minWidth: '80px', maxWidth: '120px' }}
                 />
               ) : (
-                <div className="font-pixel text-base font-bold text-primary">{userName}</div>
+                <div className="font-pixel text-sm font-bold text-primary truncate max-w-[120px]">{userName}</div>
               )}
               {!isEditingName && (
-                <Button variant="ghost" size="icon" onClick={() => setIsEditingName(true)} className="h-6 w-6 p-0.5">
-                  <Edit2 className="h-3 w-3 text-primary/70 hover:text-primary" />
+                <Button variant="ghost" size="icon" onClick={() => setIsEditingName(true)} className="h-5 w-5 p-0.5">
+                  <Edit2 className="h-2.5 w-2.5 text-primary/70 hover:text-primary" />
                 </Button>
               )}
             </div>
           </div>
         </SidebarHeader>
-        <SidebarContent className="p-1">
+        <SidebarContent className="p-0.5">
           <SidebarNav />
         </SidebarContent>
-        <SidebarFooter className="p-1">
+        <SidebarFooter className="p-0.5">
           <Button variant="ghost" className="w-full justify-start font-mono text-sidebar-foreground hover:bg-primary/20 hover:text-accent-foreground group-data-[collapsible=icon]:justify-center h-7 text-xs">
             <LogOut className="mr-1.5 h-3 w-3 group-data-[collapsible=icon]:mr-0" />
             <span className="group-data-[collapsible=icon]:hidden">Logout</span>
@@ -125,7 +131,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
       </Sidebar>
       <SidebarInset className="flex flex-col bg-background">
         <Header />
-        <main className="flex-1 overflow-y-auto p-0.5 sm:p-1">
+        <main className="flex-1 overflow-y-auto p-0.5 sm:p-0.5"> {/* Reduced padding */}
           {children}
         </main>
       </SidebarInset>
@@ -135,7 +141,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen> {/* defaultOpen controls initial desktop state */}
       <MainAppLayoutContent>{children}</MainAppLayoutContent>
     </SidebarProvider>
   );
