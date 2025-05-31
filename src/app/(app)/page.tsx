@@ -393,7 +393,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
 
           <Accordion type="multiple" className="w-full space-y-2.5 md:space-y-3">
             {tasks.map(task => (
-              <AccordionItem value={task.id} key={task.id} className="p-2 sm:p-2.5 md:p-3 rounded-md bg-card/70 border border-border/30 shadow-sm hover:shadow-primary/5 transition-shadow data-[state=open]:border-accent/40 text-sm md:text-base">
+              <AccordionItem value={task.id} key={task.id} className="p-1.5 sm:p-2 md:p-2.5 rounded-md bg-card/70 border border-border/30 shadow-sm hover:shadow-primary/5 transition-shadow data-[state=open]:border-accent/40 text-sm md:text-base">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center flex-1 min-w-0">
                     <Checkbox
@@ -402,20 +402,20 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                       onCheckedChange={() => toggleTaskCompletion(task.id)}
                       className="mr-2 h-4 w-4 border-primary data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground"
                     />
-                    <label htmlFor={`task-${task.id}`} className={`font-mono text-xs md:text-sm truncate max-w-[100px] sm:max-w-[160px] md:max-w-[220px] lg:max-w-xs ${task.isCompleted ? 'line-through text-muted-foreground' : 'text-primary-foreground'}`}>
+                    <label htmlFor={`task-${task.id}`} className={`font-mono text-xs md:text-sm truncate ${task.isCompleted ? 'line-through text-muted-foreground' : 'text-primary-foreground'}`}>
                       {task.title}
                     </label>
                   </div>
-                  <div className="flex items-center space-x-0.5 sm:space-x-1 ml-1 sm:ml-1.5 shrink-0">
+                  <div className="flex items-center space-x-0 sm:space-x-0.5 ml-0.5 sm:ml-1 shrink-0">
                     <span className="text-[10px] px-1 sm:text-xs sm:px-1.5 font-mono py-0.5 rounded-sm bg-accent/20 text-accent border border-accent/30">
                       +{task.xp} XP
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditTaskDialog(task)} className="text-muted-foreground hover:text-accent h-5 w-5 p-0.5 sm:h-6 sm:w-6 sm:p-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditTaskDialog(task)} className="text-muted-foreground hover:text-accent h-5 w-5 p-0.5 sm:h-6 sm:w-6 sm:p-0.5">
                       <Edit3 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-5 w-5 p-0.5 sm:h-6 sm:w-6 sm:p-1">
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-5 w-5 p-0.5 sm:h-6 sm:w-6 sm:p-0.5">
                           <Trash2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                         </Button>
                       </AlertDialogTrigger>
