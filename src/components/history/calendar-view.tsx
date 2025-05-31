@@ -77,8 +77,7 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
         </>
       );
     }
-    // Render only the date number if no tasks are present for this day
-    return <>{dateText}</>;
+    return <span className="relative z-10">{dateText}</span>;
   };
 
   if (!currentMonth) {
@@ -105,7 +104,7 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
             day_selected: "bg-primary text-primary-foreground hover:bg-primary focus:bg-primary",
             day_today: "bg-accent/30 text-accent-foreground rounded-md",
             caption_label: "font-pixel text-base",
-            head_cell: "font-pixel text-muted-foreground text-xs",
+            head_cell: "font-pixel text-muted-foreground text-xs w-9 font-normal text-center",
             day: "h-10 w-10 relative text-sm hover:bg-primary/10 rounded-md transition-colors",
             cell: "p-0", 
           }}
