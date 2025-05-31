@@ -28,30 +28,32 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full glassmorphic rounded-b-md">
       <div className="container mx-auto flex h-14 items-center justify-between px-3 sm:px-4 lg:px-6">
-        <div className="flex items-center">
+        <div className="flex items-center min-w-0"> {/* Added min-w-0 */}
           <SidebarTrigger className="md:hidden mr-1.5 text-primary-foreground hover:text-accent h-7 w-7" />
-          <Link href="/" className="flex items-center space-x-1.5">
-            <Gamepad2 className="h-7 w-7 text-primary font-pixel" />
-            <span className="font-pixel text-xl font-bold text-primary-foreground tracking-tighter">
+          <Link href="/" className="flex items-center space-x-1.5 min-w-0"> {/* Added min-w-0 */}
+            <Gamepad2 className="h-7 w-7 text-primary font-pixel shrink-0" /> {/* Added shrink-0 */}
+            <span className="font-pixel text-xl font-bold text-primary-foreground tracking-tighter truncate"> {/* Added truncate */}
               Pixel Progress
             </span>
           </Link>
         </div>
 
-        <div className="flex items-center space-x-2 md:space-x-3">
-          <div className="flex items-center space-x-1.5 p-1.5 rounded-md bg-primary/20 backdrop-blur-sm border border-primary/30">
-            <UserCircle className="h-4 w-4 text-accent" />
-            <span className="font-mono text-xs font-medium text-primary-foreground">
-              {user.name}: {user.xp} XP
-            </span>
-            <Zap className="h-3.5 w-3.5 text-yellow-400" />
+        <div className="flex items-center space-x-2 md:space-x-3 min-w-0"> {/* Added min-w-0 */}
+          <div className="flex items-center space-x-1.5 p-1.5 rounded-md bg-primary/20 backdrop-blur-sm border border-primary/30 min-w-0"> {/* Added min-w-0 */}
+            <UserCircle className="h-4 w-4 text-accent shrink-0" />
+            <div className="font-mono text-xs font-medium text-primary-foreground overflow-hidden flex items-center">
+              <span className="truncate max-w-[80px] xs:max-w-[100px] sm:max-w-[150px]">{user.name}</span> {/* Adjusted max-w */}
+              <span className="ml-0.5">: {user.xp} XP</span>
+            </div>
+            <Zap className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
           </div>
-          <div className="hidden sm:flex items-center space-x-1.5 p-1.5 rounded-md bg-destructive/20 backdrop-blur-sm border border-destructive/30">
-            <ShieldHalf className="h-4 w-4 text-accent" />
-            <span className="font-mono text-xs font-medium text-primary-foreground">
-              AI Rival: {rival.xp} XP
-            </span>
-            <Zap className="h-3.5 w-3.5 text-red-400" />
+          <div className="hidden sm:flex items-center space-x-1.5 p-1.5 rounded-md bg-destructive/20 backdrop-blur-sm border border-destructive/30 min-w-0"> {/* Added min-w-0 */}
+            <ShieldHalf className="h-4 w-4 text-accent shrink-0" />
+            <div className="font-mono text-xs font-medium text-primary-foreground overflow-hidden flex items-center">
+              <span className="truncate max-w-[80px] sm:max-w-[120px]">AI Rival</span>
+              <span className="ml-0.5">: {rival.xp} XP</span>
+            </div>
+            <Zap className="h-3.5 w-3.5 text-red-400 shrink-0" />
           </div>
         </div>
       </div>
