@@ -2,13 +2,13 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { CalendarTaskEvent, Task } from "@/lib/types";
+import type { Task } from "@/lib/types";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { CheckCircle2, Circle, Zap, RefreshCcw } from "lucide-react";
+import { CheckCircle2, Circle, RefreshCcw } from "lucide-react";
 import { format, parseISO, isSameDay, startOfMonth } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 
@@ -84,7 +84,7 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
         <GlassCard className="md:col-span-2 p-0 min-h-[320px]" /> 
-        <GlassCard className="md:col-span-1 p-3 space-y-2.5 min-h-[280px]" />
+        <GlassCard className="md:col-span-1 p-3 space-y-2.5 min-h-[280px] md:max-h-[calc(100vh-180px)] overflow-y-auto" />
       </div>
     );
   }
@@ -105,7 +105,7 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
             day_today: "bg-accent/30 text-accent-foreground rounded-md",
             caption_label: "font-pixel text-base",
             head_cell: "font-pixel text-muted-foreground text-xs w-9 font-normal text-center",
-            day: "h-10 w-10 relative text-sm hover:bg-primary/10 rounded-md transition-colors",
+            day: "h-9 w-9 relative text-sm hover:bg-primary/10 rounded-md transition-colors flex items-center justify-center",
             cell: "p-0", 
           }}
           components={{
@@ -114,7 +114,7 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
         />
       </GlassCard>
 
-      <GlassCard className="md:col-span-1 p-3 space-y-2.5 min-h-[280px] max-h-[calc(100vh-230px)] md:max-h-[calc(100vh-180px)] overflow-y-auto">
+      <GlassCard className="md:col-span-1 p-3 space-y-2.5 min-h-[280px] md:max-h-[calc(100vh-180px)] overflow-y-auto">
         <h3 className="text-lg font-pixel text-primary mb-2">
           {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
         </h3>
