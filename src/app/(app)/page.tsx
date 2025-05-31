@@ -126,14 +126,16 @@ export default function DashboardPage() {
   const progressPercentage = totalPossibleXP > 0 ? (completedXP / totalPossibleXP) * 100 : 0;
 
   const handleInspirationImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setInspirationImages(prev => [...prev, reader.result as string]);
-        setInspirationDataAiHints(prev => [...prev, "custom upload"]); 
-      };
-      reader.readAsDataURL(file);
+    if (event.target.files) {
+      for (let i = 0; i < event.target.files.length; i++) {
+        const file = event.target.files[i];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setInspirationImages(prev => [...prev, reader.result as string]);
+          setInspirationDataAiHints(prev => [...prev, "custom upload"]);
+        };
+        reader.readAsDataURL(file);
+      }
       if(event.target) event.target.value = "";
     }
   };
@@ -219,17 +221,19 @@ export default function DashboardPage() {
   };
   
   const handleQuickTaskImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditTaskFormData(prev => ({
-            ...prev, 
-            images: [...(prev?.images || []), reader.result as string],
-            dataAiHints: [...(prev?.dataAiHints || []), "custom upload"]
-        }));
-      };
-      reader.readAsDataURL(file);
+    if (event.target.files) {
+       for (let i = 0; i < event.target.files.length; i++) {
+        const file = event.target.files[i];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setEditTaskFormData(prev => ({
+              ...prev, 
+              images: [...(prev?.images || []), reader.result as string],
+              dataAiHints: [...(prev?.dataAiHints || []), "custom upload"]
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
       if(event.target) event.target.value = "";
     }
   };
@@ -312,7 +316,7 @@ export default function DashboardPage() {
   const handleInlineTaskImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0] && taskIdForInlineImageUpload) {
       const currentTaskId = taskIdForInlineImageUpload;
-      const file = event.target.files[0];
+      const file = event.target.files[0]; // Only taking the first file for now, can be extended for multiple
       const reader = new FileReader();
       reader.onloadend = () => {
         setTasks(prev => prev.map(t => t.id === currentTaskId ? { 
@@ -436,7 +440,7 @@ export default function DashboardPage() {
                       <div className={`flex flex-col ${task.notes && task.notes.trim() !== "" || editingNotesTaskId === task.id ? 'sm:w-2/3' : 'w-full'}`}>
                         <h4 className="text-xs font-semibold text-accent mb-0.5 flex items-center"><ImageIcon className="h-2.5 w-2.5 mr-1"/>Images:</h4>
                         {task.images && task.images.length > 0 && (
-                          <div className="grid grid-cols-3 gap-0.5 mb-0.5">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-0.5 mb-0.5">
                             {task.images.map((src, idx) => (
                               <div key={idx} className="relative aspect-square group">
                                 <img 
@@ -576,7 +580,7 @@ export default function DashboardPage() {
         <CardContent className="pt-0 px-1.5 pb-1">
           <div className="space-y-1">
             {inspirationImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 mt-0.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-0.5 mt-0.5">
                 {inspirationImages.map((src, index) => (
                   <div key={index} className="relative group aspect-square">
                     <img 
@@ -678,7 +682,7 @@ export default function DashboardPage() {
               <div className="space-y-0.5">
                 <Label className="flex items-center"><ImageIcon className="h-3 w-3 mr-1"/>Images ({editTaskFormData.images?.length || 0})</Label>
                 {editTaskFormData.images && editTaskFormData.images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-0.5 mb-0.5 p-0.5 bg-black/10 rounded border border-border/20 max-h-24 overflow-y-auto">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-0.5 mb-0.5 p-0.5 bg-black/10 rounded border border-border/20 max-h-24 overflow-y-auto">
                     {editTaskFormData.images.map((src, index) => (
                       <div key={index} className="relative group aspect-square">
                         <img src={src} alt={`Task image ${index + 1}`} className="w-full h-full object-cover rounded-sm"/>
