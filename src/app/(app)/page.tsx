@@ -367,13 +367,13 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
   };
 
   return (
-    <div className="space-y-3 md:space-y-4">
+    <div className="space-y-4 md:space-y-6">
        <GlassCard>
         <CardHeader className="p-3 md:p-4">
           <CardTitle className="text-base md:text-lg text-primary flex items-center"><ListChecks className="mr-2 h-4 w-4 md:h-5 md:w-5" />Today's Quests</CardTitle>
         </CardHeader>
         <CardContent className="p-3 md:p-4 pt-0">
-          <div className="flex gap-2 mb-2 md:mb-3">
+          <div className="flex gap-2 mb-3 md:mb-4">
             <Input
               type="text"
               value={newTaskTitle}
@@ -388,12 +388,12 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
           </div>
 
           {tasks.length === 0 && (
-            <p className="text-center text-muted-foreground py-3 text-xs md:text-sm">No quests for today. Add some!</p>
+            <p className="text-center text-muted-foreground py-4 text-xs md:text-sm">No quests for today. Add some!</p>
           )}
 
-          <Accordion type="multiple" className="w-full space-y-1.5 md:space-y-2">
+          <Accordion type="multiple" className="w-full space-y-2 md:space-y-2.5">
             {tasks.map(task => (
-              <AccordionItem value={task.id} key={task.id} className="p-2 md:p-2.5 rounded-md bg-card/70 border border-border/30 shadow-sm hover:shadow-primary/5 transition-shadow data-[state=open]:border-accent/40 text-xs md:text-sm">
+              <AccordionItem value={task.id} key={task.id} className="p-1.5 sm:p-2 md:p-2.5 rounded-md bg-card/70 border border-border/30 shadow-sm hover:shadow-primary/5 transition-shadow data-[state=open]:border-accent/40 text-xs md:text-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center flex-1 min-w-0">
                     <Checkbox
@@ -406,16 +406,16 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                       {task.title}
                     </label>
                   </div>
-                  <div className="flex items-center space-x-1.5 ml-1.5 shrink-0">
-                    <span className="text-xs md:text-sm font-mono py-0.5 px-1.5 rounded-sm bg-accent/20 text-accent border border-accent/30">
+                  <div className="flex items-center space-x-1 sm:space-x-1.5 ml-1 sm:ml-1.5 shrink-0">
+                    <span className="text-[10px] sm:text-xs font-mono py-0.5 px-1 sm:px-1.5 rounded-sm bg-accent/20 text-accent border border-accent/30">
                       +{task.xp} XP
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditTaskDialog(task)} className="text-muted-foreground hover:text-accent h-6 w-6 p-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditTaskDialog(task)} className="text-muted-foreground hover:text-accent h-5 w-5 p-0.5 sm:h-6 sm:w-6 sm:p-1">
                       <Edit3 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-6 w-6 p-1">
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-5 w-5 p-0.5 sm:h-6 sm:w-6 sm:p-1">
                           <Trash2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                         </Button>
                       </AlertDialogTrigger>
@@ -433,10 +433,10 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                       </AlertDialogContent>
                     </AlertDialog>
                     {(task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") ? (
-                      <AccordionTrigger className="p-1 hover:bg-accent/10 rounded-sm h-6 w-6 data-[state=open]:text-accent [&[data-state=open]>svg]:text-accent">
+                      <AccordionTrigger className="p-0.5 sm:p-1 hover:bg-accent/10 rounded-sm h-5 w-5 sm:h-6 sm:w-6 data-[state=open]:text-accent [&[data-state=open]>svg]:text-accent">
                          <ChevronDown className="h-3.5 w-3.5 md:h-4 md:w-4 transition-transform duration-200" />
                       </AccordionTrigger>
-                    ) : <div className="w-6 h-6"/> }
+                    ) : <div className="w-5 h-5 sm:w-6 sm:h-6"/> }
                   </div>
                 </div>
                 <AccordionContent className="pt-2 mt-2 border-t border-border/30 space-y-2">
@@ -543,15 +543,15 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         <CardHeader className="p-3 md:p-4">
           <CardTitle className="text-base md:text-lg text-primary flex items-center"><Target className="mr-2 h-4 w-4 md:h-5 md:w-5" /> Daily Mission Control</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 p-3 md:p-4 pt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <GlassCard className="p-2 md:p-2.5">
+        <CardContent className="space-y-3 p-3 md:p-4 pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <GlassCard className="p-2.5 md:p-3">
               <h3 className="text-base font-semibold text-accent mb-1.5 flex items-center"><Zap className="mr-1.5 h-4 w-4 text-yellow-400" />Your XP</h3>
               <p className="text-lg font-bold text-primary-foreground">{userXP}</p>
               <Progress value={progressPercentage} className="mt-1.5 h-1.5 bg-primary/30 [&>div]:bg-accent" />
               <p className="text-xs text-muted-foreground mt-1.5">{Math.round(progressPercentage)}% of daily tasks XP earned.</p>
             </GlassCard>
-            <GlassCard className="p-2 md:p-2.5">
+            <GlassCard className="p-2.5 md:p-3">
                <h3 className="text-base font-semibold text-accent mb-1.5 flex items-center"><Zap className="mr-1.5 h-4 w-4 text-red-500" />AI Rival XP</h3>
                <p className="text-lg font-bold text-primary-foreground">{rivalXP}</p>
                 <div className="relative group cursor-pointer mt-1.5" onClick={handleRivalImageClick}>
@@ -584,9 +584,9 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
            <h3 className="font-pixel text-base md:text-lg text-primary flex items-center"><ImageIcon className="mr-2 h-4 w-4 md:h-5 md:w-5" />My Game Art Inspirations</h3>
         </CardHeader>
         <CardContent className="p-3 md:p-4 pt-0">
-          <div className="space-y-2">
+          <div className="space-y-3">
             {inspirationImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 mt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
                 {inspirationImages.map((src, index) => (
                   <div key={index} className="relative group aspect-square">
                     <img 
@@ -610,13 +610,13 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
             )}
             
             {(inspirationImages.length === 0 && !showInspirationCamera) && (
-              <div className="text-center py-2 text-muted-foreground text-xs md:text-sm">
+              <div className="text-center py-3 text-muted-foreground text-xs md:text-sm">
                 No inspiration images. Upload or capture some!
               </div>
             )}
 
             {showInspirationCamera && (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <video ref={inspirationVideoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
                 {hasInspirationCameraPermission === false && (
                     <Alert variant="destructive" className="text-xs py-1.5 px-2">
@@ -626,7 +626,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                     </Alert>
                 )}
                  {hasInspirationCameraPermission === null && <p className="text-xs md:text-sm text-muted-foreground text-center">Requesting camera...</p>}
-                <div className="flex gap-1.5">
+                <div className="flex gap-2">
                   <Button onClick={captureInspirationImage} size="sm" className="flex-1 h-8 text-xs md:text-sm" disabled={hasInspirationCameraPermission !== true}>
                     <Camera className="mr-1.5 h-3.5 w-3.5" /> Capture
                   </Button>
@@ -639,7 +639,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
             <canvas ref={inspirationCanvasRef} className="hidden"></canvas>
 
             {!showInspirationCamera && (
-              <div className="flex flex-col sm:flex-row gap-1.5">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button onClick={() => inspirationFileRef.current?.click()} size="sm" variant="outline" className="flex-1 h-8 text-xs md:text-sm">
                   <Upload className="mr-1.5 h-3.5 w-3.5" /> Upload Image
                 </Button>
