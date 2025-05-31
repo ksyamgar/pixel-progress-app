@@ -9,16 +9,20 @@ export interface SubTask {
 export interface Task {
   id:string;
   title: string;
-  description?: string;
+  description?: string; // Retained for GoalForm, less relevant for quick tasks
   xp: number;
-  timeAllocation?: number; // in minutes
-  dueDate?: string; // ISO string, YYYY-MM-DD
+  timeAllocation?: number; // in minutes, will serve as time limit for quick tasks
+  dueDate?: string; // ISO string, YYYY-MM-DD, for GoalForm
   isCompleted: boolean;
-  subTasks: SubTask[];
+  subTasks: SubTask[]; // Primarily for GoalForm tasks
   createdAt: string; // ISO string
-  reminderEnabled?: boolean;
+  reminderEnabled?: boolean; // For GoalForm
   category?: string; // For icon mapping
-  image?: string; // Data URI for attached image
+  image?: string; // Single image for GoalForm tasks (main task image)
+  
+  // New fields for quick tasks & potentially detailed tasks
+  notes?: string;
+  images?: string[]; // Array of data URIs for multiple images per task
 }
 
 export interface AIRival {
