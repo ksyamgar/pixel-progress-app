@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { GlassCard } from "@/components/shared/glass-card";
-import type { Task } from "@/lib/types";
+import type { Task, SubTask } from "@/lib/types";
 import { PlusCircle, Zap, Target, ListChecks, Edit3, Trash2, Camera, Upload, XCircle, Image as ImageIcon, ChevronDown, BookOpen, Save, UploadCloud } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import NextImage from "next/image";
@@ -22,7 +22,12 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const initialTasks: Task[] = [
-  { id: "qt1", title: "Review PRD for new feature", xp: 25, isCompleted: false, subTasks: [], createdAt: "2024-07-30T10:00:00.000Z", category: "work", timeAllocation: 60, notes: "Focus on AI rival customization details. Check section 3.2.1. This note is a bit longer to test the scrolling and layout of the notes area, ensuring it handles multiline content effectively.", images: ["https://source.unsplash.com/random/100x100/?document&sig=1", "https://source.unsplash.com/random/100x100/?office&sig=2"], dataAiHints: ["document", "office"] },
+  { id: "qt1", title: "Review PRD for new feature", xp: 25, isCompleted: false, 
+    subTasks: [
+      { id: "qt1s1", title: "Read section 1-2", xp: 10, isCompleted: false },
+      { id: "qt1s2", title: "Check competitor analysis", xp: 5, isCompleted: false },
+    ], 
+    createdAt: "2024-07-30T10:00:00.000Z", category: "work", timeAllocation: 60, notes: "Focus on AI rival customization details. Check section 3.2.1. This note is a bit longer to test the scrolling and layout of the notes area, ensuring it handles multiline content effectively.", images: ["https://source.unsplash.com/random/100x100/?document&sig=1", "https://source.unsplash.com/random/100x100/?office&sig=2"], dataAiHints: ["document", "office"] },
   { id: "qt2", title: "Quick 15-min stretch", xp: 10, isCompleted: true, subTasks: [], createdAt: "2024-07-30T08:00:00.000Z", category: "fitness", timeAllocation: 15, images: [], notes: "", dataAiHints: [] },
   { id: "qt3", title: "Brainstorm ideas for pixel art character", xp: 15, isCompleted: false, subTasks: [], createdAt: "2024-07-30T14:00:00.000Z", category: "hobby", timeAllocation: 30, images: ["https://source.unsplash.com/random/100x100/?pixelart&sig=3", "https://source.unsplash.com/random/100x100/?characterdesign&sig=4", "https://source.unsplash.com/random/100x100/?fantasy&sig=5"], notes:"Explore different color palettes. Try a cyberpunk theme.", dataAiHints: ["pixelart", "character design", "fantasy"]},
   { id: "qt4", title: "Reply to important emails", xp: 20, isCompleted: false, subTasks: [], createdAt: "2024-07-30T09:00:00.000Z", category: "work", timeAllocation: 45, images: [], notes: "Client X, Project Y follow-up.", dataAiHints: [] },
@@ -31,13 +36,12 @@ const initialTasks: Task[] = [
 interface DashboardPageProps {
   userXP?: number;
   setUserXP?: Dispatch<SetStateAction<number>>;
-  userName?: string; // userName is also passed from layout
+  userName?: string; 
 }
 
 export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: DashboardPageProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  // userXP and setUserXP are now props
   const [rivalXP, setRivalXP] = useState(1100);
   
   const [inspirationImages, setInspirationImages] = useState<string[]>([
@@ -47,7 +51,6 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
       "https://source.unsplash.com/random/150x150/?pixel,monster&sig=104"
     ]);
   const [inspirationDataAiHints, setInspirationDataAiHints] = useState<string[]>(["pixel character", "pixel landscape", "8bit item", "pixel monster"]);
-
 
   const [showInspirationCamera, setShowInspirationCamera] = useState(false);
   const [hasInspirationCameraPermission, setHasInspirationCameraPermission] = useState<boolean | null>(null);
@@ -77,6 +80,8 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
 
   const [rivalImageSrc, setRivalImageSrc] = useState("https://source.unsplash.com/random/200x100/?robot,enemy&sig=105");
   const rivalImageInputRef = useRef<HTMLInputElement>(null);
+
+  const [newSubtaskData, setNewSubtaskData] = useState<{ [taskId: string]: { title: string; xp: number } }>({});
 
   useEffect(() => {
     return () => {
@@ -108,28 +113,166 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     setNewTaskTitle("");
   };
 
-  const toggleTaskCompletion = (taskId: string) => {
-    setTasks(prevTasks => {
-      const newTasks = prevTasks.map(task => {
+  const toggleTaskCompletion = (taskId: string, subTaskId?: string) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task => {
         if (task.id === taskId) {
-          const wasCompleted = task.isCompleted;
-          const updatedTask = { ...task, isCompleted: !task.isCompleted };
-          if (updatedTask.isCompleted && !wasCompleted) {
-            setUserXP(prevXP => prevXP + updatedTask.xp);
-          } else if (!updatedTask.isCompleted && wasCompleted) {
-            setUserXP(prevXP => prevXP - updatedTask.xp);
+          let taskXPChange = 0;
+          const originalTaskCompleted = task.isCompleted;
+          let updatedSubTasks = [...task.subTasks]; 
+
+          if (subTaskId) { // Toggling a subtask
+            updatedSubTasks = task.subTasks.map(st => {
+              if (st.id === subTaskId) {
+                const originalSubTaskCompleted = st.isCompleted;
+                const newSubTaskCompleted = !st.isCompleted;
+                if (newSubTaskCompleted && !originalSubTaskCompleted) taskXPChange += st.xp;
+                if (!newSubTaskCompleted && originalSubTaskCompleted) taskXPChange -= st.xp;
+                return { ...st, isCompleted: newSubTaskCompleted };
+              }
+              return st;
+            });
+
+            const allSubtasksNowCompleted = updatedSubTasks.every(st => st.isCompleted);
+            // Main task becomes complete if all subtasks are done AND it wasn't already marked complete by user
+            // OR if it has no subtasks, its status is independent (this case is handled by else block)
+            let newOverallCompletedStatus = task.isCompleted;
+            if (task.subTasks.length > 0) {
+                newOverallCompletedStatus = allSubtasksNowCompleted;
+            }
+
+
+            if (newOverallCompletedStatus && !originalTaskCompleted && task.subTasks.length > 0) {
+              taskXPChange += task.xp; // Add main task XP if all subtasks complete it
+            } else if (!newOverallCompletedStatus && originalTaskCompleted && task.subTasks.length > 0) {
+              taskXPChange -= task.xp; // Subtract main task XP if a subtask uncompletes it
+            }
+            
+            if (taskXPChange !== 0) {
+              setUserXP(prevXP => prevXP + taskXPChange);
+            }
+            return { ...task, subTasks: updatedSubTasks, isCompleted: newOverallCompletedStatus };
+
+          } else { // Toggling main task
+            const newCompletedStatus = !task.isCompleted;
+            if (newCompletedStatus && !originalTaskCompleted) taskXPChange += task.xp;
+            if (!newCompletedStatus && originalTaskCompleted) taskXPChange -= task.xp;
+            
+            updatedSubTasks = newCompletedStatus ? task.subTasks.map(st => {
+                if(!st.isCompleted) taskXPChange += st.xp; // Add XP for subtasks now being auto-completed
+                return {...st, isCompleted: true};
+            }) : task.subTasks; // If unchecking main task, subtasks retain their individual statuses
+
+            if (taskXPChange !== 0) {
+                setUserXP(prevXP => prevXP + taskXPChange);
+            }
+            // If unchecking main task, and all subtasks were completed, the main task remains completed.
+            // This logic is subtle: user unchecking main task overrides subtask-driven completion.
+            // But if main task is unchecked, subtasks are NOT auto-unchecked.
+            const finalCompletedStatus = newCompletedStatus;
+
+
+            return { ...task, isCompleted: finalCompletedStatus, subTasks: updatedSubTasks };
           }
-          return updatedTask;
         }
         return task;
-      });
-      return newTasks.sort((a,b) => Number(a.isCompleted) - Number(b.isCompleted));
-    });
+      }).sort((a,b) => Number(a.isCompleted) - Number(b.isCompleted))
+    );
   };
 
-  const totalPossibleXP = tasks.reduce((sum, task) => sum + task.xp, 0);
-  const completedXP = tasks.filter(t => t.isCompleted).reduce((sum, task) => sum + task.xp, 0);
+  const handleAddSubtask = (taskId: string) => {
+    const currentSubtaskInput = newSubtaskData[taskId];
+    if (!currentSubtaskInput || currentSubtaskInput.title.trim() === "") return;
+
+    setTasks(prevTasks => prevTasks.map(task => {
+      if (task.id === taskId) {
+        const newSub: SubTask = {
+          id: String(Date.now()),
+          title: currentSubtaskInput.title,
+          xp: currentSubtaskInput.xp || 0,
+          isCompleted: false,
+        };
+        // If adding a subtask makes the parent task incomplete (if it was complete because it had no subtasks)
+        // For now, let's assume adding a subtask doesn't change parent's completion status directly.
+        // Parent will become incomplete if it's currently complete & a subtask is added (as it's no longer "all subtasks complete")
+        let newParentCompletedStatus = task.isCompleted;
+        if(task.isCompleted && task.subTasks.length === 0) { // Was complete due to no subtasks
+             // Parent task may need to become incomplete if it was marked as complete before having subtasks
+             // This happens naturally if isCompleted relies on all subtasks being done.
+        }
+
+        return { ...task, subTasks: [...task.subTasks, newSub], isCompleted: false }; // Adding a new subtask makes parent incomplete
+      }
+      return task;
+    }));
+    setNewSubtaskData(prev => ({ ...prev, [taskId]: { title: "", xp: 5 } })); // Reset input
+  };
+
+  const handleDeleteSubtask = (taskId: string, subTaskId: string) => {
+    setTasks(prevTasks => prevTasks.map(task => {
+      if (task.id === taskId) {
+        const subtaskToDelete = task.subTasks.find(st => st.id === subTaskId);
+        let xpChange = 0;
+        if (subtaskToDelete && subtaskToDelete.isCompleted) {
+          xpChange -= subtaskToDelete.xp; // Subtract XP if deleted subtask was completed
+        }
+        
+        const updatedSubTasks = task.subTasks.filter(st => st.id !== subTaskId);
+        
+        // Check if parent task needs to change completion status
+        const wasParentCompleted = task.isCompleted;
+        const allRemainingSubtasksCompleted = updatedSubTasks.length > 0 ? updatedSubTasks.every(st => st.isCompleted) : true; // True if no subtasks left
+        
+        let newParentCompletedStatus = wasParentCompleted;
+        if (updatedSubTasks.length > 0) {
+            newParentCompletedStatus = allRemainingSubtasksCompleted;
+        } else { // No subtasks left
+            // If parent was completed due to all subtasks, and now there are no subtasks, it should remain completed based on its own merit or become incomplete if it was only due to subtasks
+            // Let's assume if no subtasks left, its original completion state (if any) or explicit toggle matters.
+            // For simplicity, if it becomes 0 subtasks, its completion doesn't auto-change here from this action.
+            // It should have been explicitly toggled before.
+            // If all subtasks are removed, and parent was completed, it should remain completed unless it was only completed due to subtasks.
+            // If parent was completed AND all subtasks were completed, and then all subtasks are deleted -> parent should remain completed.
+            // If parent was completed SOLELY because all subtasks were completed, and then last subtask is deleted -> parent status logic is tricky.
+            // The easiest is: parent's completion is only affected by adding/toggling, not by deleting last subtask.
+             newParentCompletedStatus = allRemainingSubtasksCompleted ? task.isCompleted : false; // Becomes complete if all remaining are complete, or incomplete
+        }
+
+
+        if (newParentCompletedStatus && !wasParentCompleted && updatedSubTasks.length > 0) { // Gained completion
+          xpChange += task.xp;
+        } else if (!newParentCompletedStatus && wasParentCompleted && updatedSubTasks.length > 0) { // Lost completion
+           // Only subtract parent XP if it was completed *because* of subtasks
+           if(task.subTasks.every(st => st.isCompleted)){ // Check original subtasks
+             xpChange -= task.xp;
+           }
+        }
+
+
+        if (xpChange !== 0) {
+          setUserXP(prevXP => prevXP + xpChange);
+        }
+        return { ...task, subTasks: updatedSubTasks, isCompleted: newParentCompletedStatus };
+      }
+      return task;
+    }));
+  };
+
+
+  const totalPossibleXP = tasks.reduce((sum, task) => sum + task.xp + task.subTasks.reduce((subSum, st) => subSum + st.xp, 0), 0);
+  const completedXP = tasks.reduce((sum, task) => {
+    let currentTaskXP = 0;
+    if (task.isCompleted) {
+        currentTaskXP += task.xp;
+         // Add subtask XP only if parent is complete, assuming they are auto-completed with parent
+        currentTaskXP += task.subTasks.filter(st => st.isCompleted).reduce((subSum, st) => subSum + st.xp, 0);
+    } else {
+        currentTaskXP += task.subTasks.filter(st => st.isCompleted).reduce((subSum, st) => subSum + st.xp, 0);
+    }
+    return sum + currentTaskXP;
+  }, 0);
   const progressPercentage = totalPossibleXP > 0 ? (completedXP / totalPossibleXP) * 100 : 0;
+
 
   const handleInspirationImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -222,6 +365,23 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
   };
 
   const handleDeleteTask = (taskId: string) => {
+     const taskToDelete = tasks.find(t => t.id === taskId);
+    if (taskToDelete) {
+        let xpChange = 0;
+        if (taskToDelete.isCompleted) {
+            xpChange -= taskToDelete.xp;
+            taskToDelete.subTasks.forEach(st => {
+                if(st.isCompleted) xpChange -= st.xp;
+            });
+        } else {
+            taskToDelete.subTasks.forEach(st => {
+                if(st.isCompleted) xpChange -= st.xp;
+            });
+        }
+        if (xpChange !== 0) {
+            setUserXP(prevXP => prevXP + xpChange);
+        }
+    }
     setTasks(prev => prev.filter(t => t.id !== taskId));
     toast({ title: "Quest Removed", variant: "destructive", className: "glassmorphic font-mono text-xs" });
   };
@@ -402,7 +562,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                       onCheckedChange={() => toggleTaskCompletion(task.id)}
                       className="mr-2 h-4 w-4 border-primary data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground"
                     />
-                    <label htmlFor={`task-${task.id}`} className={`font-mono text-xs md:text-sm truncate min-w-0 max-w-[140px] sm:max-w-[250px] md:max-w-none ${task.isCompleted ? 'line-through text-muted-foreground' : 'text-primary-foreground'}`}>
+                    <label htmlFor={`task-${task.id}`} className={`font-mono text-xs md:text-sm truncate min-w-[130px] sm:min-w-0 md:max-w-none ${task.isCompleted ? 'line-through text-muted-foreground' : 'text-primary-foreground'}`}>
                       {task.title}
                     </label>
                   </div>
@@ -432,98 +592,153 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                    {(task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") ? (
+                    {(task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || (task.subTasks && task.subTasks.length > 0) || editingNotesTaskId === task.id ? (
                       <AccordionTrigger className="p-0.5 sm:p-1 hover:bg-accent/10 rounded-sm h-5 w-5 sm:h-6 sm:w-6 data-[state=open]:text-accent [&[data-state=open]>svg]:text-accent">
                          <ChevronDown className="h-3.5 w-3.5 md:h-4 md:w-4 transition-transform duration-200" />
                       </AccordionTrigger>
                     ) : <div className="w-5 h-5 sm:w-6 sm:h-6"/> }
                   </div>
                 </div>
-                <AccordionContent className="pt-2.5 mt-2.5 border-t border-border/30 space-y-2.5">
-                  {((task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id) && (
-                    <div className="flex flex-col sm:flex-row gap-2.5">
-                      
-                      <div className={`flex flex-col ${task.notes && task.notes.trim() !== "" || editingNotesTaskId === task.id ? 'sm:w-2/3' : 'w-full'}`}>
-                        <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center"><ImageIcon className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Images:</h4>
-                        {task.images && task.images.length > 0 && (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
-                            {task.images.map((src, idx) => (
-                              <div key={idx} className="relative aspect-square group">
-                                <img 
-                                  src={src} 
-                                  data-ai-hint={task.dataAiHints?.[idx] || "task image"}
-                                  alt={`Task image ${idx+1}`} 
-                                  className="w-full h-full object-cover rounded-md border border-accent/20 group-hover:opacity-70 transition-opacity cursor-pointer"
-                                  onClick={() => openInspirationImageInOverlay(src)}
-                                  />
-                                <Button
-                                  variant="destructive"
-                                  size="icon"
-                                  className="absolute top-1.5 right-1.5 h-6 w-6 p-1 opacity-50 group-hover:opacity-100 transition-opacity z-10"
-                                  onClick={() => removeTaskImageInline(task.id, idx)}
-                                >
-                                  <XCircle className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                         {(task.images?.length === 0 || !task.images) && editingNotesTaskId !== task.id && <p className="text-sm md:text-base text-muted-foreground mb-2">No images yet.</p>}
-                         <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-full h-8 text-sm md:text-base mt-auto"
-                          onClick={() => {
-                            setTaskIdForInlineImageUpload(task.id);
-                            inlineTaskImageFileRef.current?.click();
-                          }}
-                        >
-                          <Upload className="h-4 w-4 mr-2" /> Add Image
-                        </Button>
-                      </div>
-                      
-
-                      {(task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id ? (
-                        <div className={`flex flex-col ${task.images && task.images.length > 0 ? 'sm:w-1/3' : 'w-full mt-2.5 sm:mt-0'} flex-grow`}>
-                          <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center shrink-0"><BookOpen className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Notes:</h4>
-                          {editingNotesTaskId === task.id ? (
-                            <div className="flex flex-col space-y-2 flex-grow">
-                              <Textarea
-                                value={currentInlineNotes}
-                                onChange={handleInlineNotesChange}
-                                className="text-sm md:text-base bg-background/70 border-primary/30 flex-grow min-h-[120px]"
-                              />
-                              <div className="flex gap-2 shrink-0 mt-auto">
-                                <Button onClick={handleSaveInlineNotes} size="sm" className="h-8 text-sm md:text-base flex-1 bg-primary hover:bg-primary/80">
-                                  <Save className="h-3.5 w-3.5 mr-1.5"/>Save
-                                </Button>
-                                <Button variant="outline" onClick={handleCancelInlineNotesEdit} size="sm" className="h-8 text-sm md:text-base flex-1">Cancel</Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col flex-grow">
-                              <ScrollArea className="text-sm md:text-base text-muted-foreground whitespace-pre-wrap bg-black/10 p-2 rounded-md border border-border/20 flex-grow min-h-[100px]">
-                                {task.notes}
-                              </ScrollArea>
-                              <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-8 text-sm md:text-base mt-auto shrink-0">
-                                <Edit3 className="h-3.5 w-3.5 mr-1.5"/> Edit Notes
-                              </Button>
+                <AccordionContent className="pt-2.5 mt-2.5 border-t border-border/30">
+                 <div className="space-y-3"> {/* Wrapper for all content sections */}
+                    {((task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id) && (
+                      <div className="flex flex-col sm:flex-row gap-2.5">
+                        <div className={`flex flex-col ${task.notes && task.notes.trim() !== "" || editingNotesTaskId === task.id ? 'sm:w-2/3' : 'w-full'}`}>
+                          <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center"><ImageIcon className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Images:</h4>
+                          {task.images && task.images.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
+                              {task.images.map((src, idx) => (
+                                <div key={idx} className="relative aspect-square group">
+                                  <img 
+                                    src={src} 
+                                    data-ai-hint={task.dataAiHints?.[idx] || "task image"}
+                                    alt={`Task image ${idx+1}`} 
+                                    className="w-full h-full object-cover rounded-md border border-accent/20 group-hover:opacity-70 transition-opacity cursor-pointer"
+                                    onClick={() => openInspirationImageInOverlay(src)}
+                                    />
+                                  <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-1.5 right-1.5 h-6 w-6 p-1 opacity-50 group-hover:opacity-100 transition-opacity z-10"
+                                    onClick={() => removeTaskImageInline(task.id, idx)}
+                                  >
+                                    <XCircle className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
                           )}
+                          {(task.images?.length === 0 || !task.images) && editingNotesTaskId !== task.id && <p className="text-sm md:text-base text-muted-foreground mb-2">No images yet.</p>}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-8 text-sm md:text-base mt-auto"
+                            onClick={() => {
+                              setTaskIdForInlineImageUpload(task.id);
+                              inlineTaskImageFileRef.current?.click();
+                            }}
+                          >
+                            <Upload className="h-4 w-4 mr-2" /> Add Image
+                          </Button>
                         </div>
-                       ) : (task.images && task.images.length > 0) ? ( 
-                         <div className="flex flex-col sm:w-1/3 flex-grow">
-                            <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center shrink-0"><BookOpen className="h-4 w-4 mr-1.5"/>Notes:</h4>
-                             <p className="text-sm md:text-base text-muted-foreground mb-2 flex-grow">No notes yet.</p>
-                            <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-8 text-sm md:text-base mt-auto shrink-0">
-                                <Edit3 className="h-3.5 w-3.5 mr-1.5"/> Add Notes
-                            </Button>
-                         </div>
-                       ) : null 
-                      }
+                        
+
+                        {(task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id ? (
+                          <div className={`flex flex-col ${task.images && task.images.length > 0 ? 'sm:w-1/3' : 'w-full mt-2.5 sm:mt-0'} flex-grow`}>
+                            <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center shrink-0"><BookOpen className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Notes:</h4>
+                            {editingNotesTaskId === task.id ? (
+                              <div className="flex flex-col space-y-2 flex-grow">
+                                <Textarea
+                                  value={currentInlineNotes}
+                                  onChange={handleInlineNotesChange}
+                                  className="text-sm md:text-base bg-background/70 border-primary/30 flex-grow min-h-[120px]"
+                                />
+                                <div className="flex gap-2 shrink-0 mt-auto">
+                                  <Button onClick={handleSaveInlineNotes} size="sm" className="h-8 text-sm md:text-base flex-1 bg-primary hover:bg-primary/80">
+                                    <Save className="h-3.5 w-3.5 mr-1.5"/>Save
+                                  </Button>
+                                  <Button variant="outline" onClick={handleCancelInlineNotesEdit} size="sm" className="h-8 text-sm md:text-base flex-1">Cancel</Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col flex-grow">
+                                <ScrollArea className="text-sm md:text-base text-muted-foreground whitespace-pre-wrap bg-black/10 p-2 rounded-md border border-border/20 flex-grow min-h-[100px]">
+                                  {task.notes}
+                                </ScrollArea>
+                                <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-8 text-sm md:text-base mt-auto shrink-0">
+                                  <Edit3 className="h-3.5 w-3.5 mr-1.5"/> Edit Notes
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (task.images && task.images.length > 0) ? ( 
+                          <div className="flex flex-col sm:w-1/3 flex-grow">
+                              <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center shrink-0"><BookOpen className="h-4 w-4 mr-1.5"/>Notes:</h4>
+                              <p className="text-sm md:text-base text-muted-foreground mb-2 flex-grow">No notes yet.</p>
+                              <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-8 text-sm md:text-base mt-auto shrink-0">
+                                  <Edit3 className="h-3.5 w-3.5 mr-1.5"/> Add Notes
+                              </Button>
+                          </div>
+                        ) : null 
+                        }
+                      </div>
+                    )}
+
+                    {/* Sub-tasks section */}
+                    <div className={`${((task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id) ? 'mt-2.5 pt-2.5 border-t border-border/30' : ''}`}>
+                      <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center">
+                        <ListChecks className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Sub-Quests
+                      </h4>
+                      {task.subTasks.length > 0 && (
+                        <div className="space-y-1.5 mb-2.5">
+                          {task.subTasks.map(subtask => (
+                            <div key={subtask.id} className="flex items-center justify-between p-1.5 rounded bg-card/50 border border-border/20 text-xs">
+                              <div className="flex items-center">
+                                <Checkbox
+                                  id={`subtask-${task.id}-${subtask.id}`}
+                                  checked={subtask.isCompleted}
+                                  onCheckedChange={() => toggleTaskCompletion(task.id, subtask.id)}
+                                  className="mr-2 h-3.5 w-3.5 border-primary data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground"
+                                />
+                                <label htmlFor={`subtask-${task.id}-${subtask.id}`} className={`font-mono ${subtask.isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                                  {subtask.title}
+                                </label>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] px-1 py-0.5 rounded-sm bg-accent/20 text-accent border border-accent/30">
+                                  +{subtask.xp} XP
+                                </span>
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteSubtask(task.id, subtask.id)} className="text-muted-foreground hover:text-destructive h-5 w-5 p-0.5">
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="space-y-1.5 p-1.5 rounded bg-black/10 border border-border/20">
+                        <Input
+                          placeholder="New sub-quest title..."
+                          value={newSubtaskData[task.id]?.title || ''}
+                          onChange={(e) => setNewSubtaskData(prev => ({...prev, [task.id]: {...(prev[task.id] || {xp: 5}), title: e.target.value }}))}
+                          className="h-7 text-xs bg-background/70 border-primary/30"
+                        />
+                        <div className="flex gap-1.5 items-center">
+                          <Input
+                            type="number"
+                            placeholder="XP"
+                            value={newSubtaskData[task.id]?.xp ?? 5}
+                            onChange={(e) => setNewSubtaskData(prev => ({...prev, [task.id]: {...(prev[task.id] || {title: ""}), xp: parseInt(e.target.value) || 0 }}))}
+                            className="h-7 text-xs w-20 bg-background/70 border-primary/30"
+                          />
+                          <Button onClick={() => handleAddSubtask(task.id)} size="sm" variant="outline" className="h-7 text-xs flex-1 hover:bg-primary/10 hover:text-accent">
+                            <PlusCircle className="mr-1 h-3 w-3" /> Add Sub-Quest
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -766,7 +981,3 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     </div>
   );
 }
-
-    
-
-    
