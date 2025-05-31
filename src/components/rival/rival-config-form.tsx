@@ -13,9 +13,8 @@ import { Save, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 
-// Mock initial rival data
 const initialRivalData: AIRival = {
-  xp: 1100, // This would likely come from a shared state or backend
+  xp: 1100, 
   xpGainRule: 'hourly',
   xpGainValue: 10,
 };
@@ -24,9 +23,8 @@ export function RivalConfigForm() {
   const [rivalConfig, setRivalConfig] = useState<AIRival>(initialRivalData);
   const { toast } = useToast();
 
-  // In a real app, you'd fetch this or get from context
   useEffect(() => {
-    // const fetchedConfig = await getRivalConfigFromAI(); // Placeholder
+    // Simulate fetching data
     // setRivalConfig(fetchedConfig);
   }, []);
 
@@ -41,39 +39,38 @@ export function RivalConfigForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Call AI flow to save config: await updateAIRivalConfig(rivalConfig); // Placeholder
     console.log("Saving AI Rival Config:", rivalConfig);
     toast({
       title: "AI Rival Config Saved!",
       description: `Rule: ${rivalConfig.xpGainRule}, Value: ${rivalConfig.xpGainValue}`,
-      className: "glassmorphic font-mono border-accent text-foreground",
+      className: "glassmorphic font-mono border-accent text-foreground text-sm",
     });
   };
 
   return (
-    <GlassCard className="max-w-lg mx-auto font-mono">
-      <form onSubmit={handleSubmit} className="space-y-6 p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <Bot className="h-10 w-10 text-primary" />
-          <h2 className="text-2xl font-pixel text-primary">Configure AI Rival</h2>
+    <GlassCard className="max-w-md mx-auto font-mono">
+      <form onSubmit={handleSubmit} className="space-y-4 p-4">
+        <div className="flex items-center space-x-2.5 mb-3">
+          <Bot className="h-8 w-8 text-primary" />
+          <h2 className="text-xl font-pixel text-primary">Configure AI Rival</h2>
         </div>
         
-        <div>
-          <Label htmlFor="xpGainRule" className="text-primary-foreground/80">XP Gain Rule</Label>
+        <div className="text-sm">
+          <Label htmlFor="xpGainRule" className="text-primary-foreground/80 text-xs">XP Gain Rule</Label>
           <Select value={rivalConfig.xpGainRule} onValueChange={handleRuleChange}>
-            <SelectTrigger id="xpGainRule" className="w-full bg-card/50 border-primary/30">
+            <SelectTrigger id="xpGainRule" className="w-full bg-card/50 border-primary/30 h-9 text-sm">
               <SelectValue placeholder="Select XP gain rule" />
             </SelectTrigger>
             <SelectContent className="glassmorphic">
               {XP_GAIN_RULES.map(rule => (
-                <SelectItem key={rule.id} value={rule.id} className="hover:bg-primary/20 focus:bg-primary/20">{rule.name}</SelectItem>
+                <SelectItem key={rule.id} value={rule.id} className="hover:bg-primary/20 focus:bg-primary/20 text-sm">{rule.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="xpGainValue" className="text-primary-foreground/80">
+        <div className="text-sm">
+          <Label htmlFor="xpGainValue" className="text-primary-foreground/80 text-xs">
             {rivalConfig.xpGainRule === 'percentageOfUserMissed' ? 'Percentage Value (%)' : 'XP Value'}
           </Label>
           <Input
@@ -83,24 +80,22 @@ export function RivalConfigForm() {
             value={rivalConfig.xpGainValue}
             onChange={handleChange}
             required
-            className="bg-card/50 border-primary/30 focus:border-accent"
+            className="bg-card/50 border-primary/30 focus:border-accent h-9 text-sm"
           />
         </div>
 
-        <div className="pt-2">
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/80 font-semibold">
-            <Save className="mr-2 h-5 w-5" /> Save Configuration
+        <div className="pt-1">
+          <Button type="submit" size="sm" className="w-full bg-primary hover:bg-primary/80 font-semibold h-9">
+            <Save className="mr-1.5 h-4 w-4" /> Save Configuration
           </Button>
         </div>
         
-        <div className="text-xs text-muted-foreground p-3 rounded-md bg-card/30 border border-border/20">
+        <div className="text-xs text-muted-foreground p-2.5 rounded-md bg-card/30 border border-border/20 space-y-1">
           <p><strong className="text-accent">Hourly:</strong> Rival gains fixed XP every hour.</p>
-          <p><strong className="text-accent">Percentage of User's Missed XP:</strong> Rival gains a percentage of XP from your incomplete/failed tasks.</p>
-          <p><strong className="text-accent">Daily Flat Rate:</strong> Rival gains a fixed amount of XP daily, regardless of activity.</p>
+          <p><strong className="text-accent">Percentage of User's Missed XP:</strong> Rival gains a % of XP from your incomplete tasks.</p>
+          <p><strong className="text-accent">Daily Flat Rate:</strong> Rival gains a fixed amount of XP daily.</p>
         </div>
       </form>
     </GlassCard>
   );
 }
-
-    

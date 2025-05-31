@@ -21,23 +21,17 @@ const mockHistoricalTasks: Task[] = [
 ];
 
 export default function HistoryPage() {
-  const [allTasks, setAllTasks] = useState<Task[]>(mockHistoricalTasks); // This would include current and past tasks
+  const [allTasks, setAllTasks] = useState<Task[]>(mockHistoricalTasks); 
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  // This function would typically add the task to the current day's list or a main task list.
-  // For demonstration, we'll just toast. In a real app, this would interact with the Goals state.
   const handleReviveTask = (task: Task) => {
     console.log("Reviving task:", task.title);
-    // Example: Add to a global task list or today's tasks
-    // For now, just show a notification
     toast({
       title: "Quest Added to Today!",
       description: `"${task.title}" is ready for you to conquer again.`,
       className: "glassmorphic font-mono border-accent text-foreground",
     });
-    // Potentially navigate to goals page or update a shared state
-    // setTasks(prev => [...prev, revivedTask]); // If this page also manages active tasks
   };
   
   const filteredTasks = allTasks.filter(task => 
@@ -47,46 +41,46 @@ export default function HistoryPage() {
 
 
   return (
-    <div className="space-y-6 font-mono">
-      <GlassCard className="p-4 md:p-6">
-        <h1 className="text-3xl font-pixel text-primary mb-6 flex items-center">
-          <CalendarDays className="mr-3 h-8 w-8" />
+    <div className="space-y-4 font-mono">
+      <GlassCard className="p-4">
+        <h1 className="text-2xl font-pixel text-primary mb-4 flex items-center">
+          <CalendarDays className="mr-2.5 h-7 w-7" />
           Quest Archives & Calendar
         </h1>
-        <p className="text-muted-foreground mb-4">
+        <p className="text-muted-foreground text-sm mb-2">
           Review your past triumphs and missed opportunities. Revive old quests to take another shot at glory!
         </p>
       </GlassCard>
       
       <CalendarView tasks={allTasks} onReviveTask={handleReviveTask} />
 
-      <GlassCard className="p-4 md:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-pixel text-primary flex items-center">
-            <History className="mr-2 h-7 w-7" /> Reusable Quests Log
+      <GlassCard className="p-4">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-xl font-pixel text-primary flex items-center">
+            <History className="mr-2 h-6 w-6" /> Reusable Quests Log
           </h2>
         </div>
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <div className="relative mb-3">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             type="text"
             placeholder="Search past quests..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-card/50 border-primary/30 focus:border-accent"
+            className="pl-9 h-9 text-sm bg-card/50 border-primary/30 focus:border-accent"
           />
         </div>
-        <ScrollArea className="h-[300px] pr-3">
-          {filteredTasks.length === 0 && <p className="text-muted-foreground text-center py-4">No quests match your search, or no quests logged yet.</p>}
-          <ul className="space-y-2">
+        <ScrollArea className="h-[250px] pr-2.5">
+          {filteredTasks.length === 0 && <p className="text-muted-foreground text-center py-3 text-sm">No quests match your search, or no quests logged yet.</p>}
+          <ul className="space-y-1.5">
             {filteredTasks.map(task => (
-              <li key={task.id} className="p-3 rounded-lg bg-card/50 border border-border/30 flex justify-between items-center">
+              <li key={task.id} className="p-2.5 rounded-md bg-card/50 border border-border/30 flex justify-between items-center">
                 <div>
-                  <p className={`font-semibold ${task.isCompleted ? 'text-green-400' : 'text-foreground'}`}>{task.title}</p>
+                  <p className={`font-semibold text-sm ${task.isCompleted ? 'text-green-400' : 'text-foreground'}`}>{task.title}</p>
                   <p className="text-xs text-muted-foreground">XP: {task.xp} - {task.category || 'General'}</p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => handleReviveTask(task)} className="hover:bg-primary/10 hover:text-accent">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Reuse Quest
+                <Button size="sm" variant="outline" onClick={() => handleReviveTask(task)} className="text-xs h-8 hover:bg-primary/10 hover:text-accent">
+                  <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Reuse
                 </Button>
               </li>
             ))}
@@ -96,5 +90,3 @@ export default function HistoryPage() {
     </div>
   );
 }
-
-    

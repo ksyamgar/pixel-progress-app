@@ -74,10 +74,6 @@ export default function GoalsPage() {
             if (newCompletedStatus && !originalTaskCompleted) taskXPChange += task.xp;
             if (!newCompletedStatus && originalTaskCompleted) taskXPChange -= task.xp;
             
-            // If main task is toggled, subtasks should also reflect this if it's being marked complete
-            // For simplicity, if main task is marked complete, all subtasks are considered complete.
-            // If main task is marked incomplete, it doesn't affect subtask XP unless they were also toggled.
-            // This logic can be refined.
             const updatedSubTasks = newCompletedStatus ? task.subTasks.map(st => ({...st, isCompleted: true})) : task.subTasks;
             if (newCompletedStatus) {
                 task.subTasks.forEach(st => {
@@ -95,37 +91,35 @@ export default function GoalsPage() {
   };
   
   const handleAddSubtask = (taskId: string) => {
-    // This would typically open a small form or inline editing for the subtask.
-    // For now, let's find the task and potentially open the main form with it.
     const taskToEdit = tasks.find(t => t.id === taskId);
     if (taskToEdit) {
-      handleOpenForm(taskToEdit); // Re-open form to add subtask
+      handleOpenForm(taskToEdit);
     }
   };
 
 
   return (
-    <div className="space-y-6 font-mono">
-      <GlassCard className="p-4 md:p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-3xl font-pixel text-primary">My Quests & Goals</h1>
+    <div className="space-y-4 font-mono">
+      <GlassCard className="p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+          <h1 className="text-2xl font-pixel text-primary">My Quests & Goals</h1>
           <div className="flex items-center gap-2">
-            <Button variant={viewMode === 'grid' ? "default" : "outline"} size="icon" onClick={() => setViewMode('grid')} className={viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/20'}>
-              <LayoutGrid className="h-5 w-5" />
+            <Button variant={viewMode === 'grid' ? "default" : "outline"} size="icon" onClick={() => setViewMode('grid')} className={`h-9 w-9 ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/20'}`}>
+              <LayoutGrid className="h-4 w-4" />
             </Button>
-            <Button variant={viewMode === 'list' ? "default" : "outline"} size="icon" onClick={() => setViewMode('list')} className={viewMode === 'list' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/20'}>
-              <List className="h-5 w-5" />
+            <Button variant={viewMode === 'list' ? "default" : "outline"} size="icon" onClick={() => setViewMode('list')} className={`h-9 w-9 ${viewMode === 'list' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/20'}`}>
+              <List className="h-4 w-4" />
             </Button>
-            <Button onClick={() => handleOpenForm()} className="bg-primary hover:bg-primary/80">
-              <PlusCircle className="mr-2 h-5 w-5" /> Add New Quest
+            <Button onClick={() => handleOpenForm()} size="sm" className="bg-primary hover:bg-primary/80">
+              <PlusCircle className="mr-1.5 h-4 w-4" /> Add New Quest
             </Button>
           </div>
         </div>
 
         {tasks.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8 text-lg">No quests defined yet. Start your adventure by adding one!</p>
+          <p className="text-center text-muted-foreground py-6 text-base">No quests defined yet. Start your adventure by adding one!</p>
         ) : (
-          <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-4"}>
+          <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" : "space-y-3"}>
             {tasks.map(task => (
               <GoalCard
                 key={task.id}
@@ -149,5 +143,3 @@ export default function GoalsPage() {
     </div>
   );
 }
-
-    

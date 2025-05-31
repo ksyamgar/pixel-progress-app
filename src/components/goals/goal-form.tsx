@@ -24,7 +24,6 @@ interface GoalFormProps {
   initialTask?: Task | null;
 }
 
-// Static default values for a new task to prevent hydration mismatches
 const EMPTY_TASK_STATIC_DEFAULTS: Task = {
   id: '',
   title: '',
@@ -32,9 +31,9 @@ const EMPTY_TASK_STATIC_DEFAULTS: Task = {
   xp: 10,
   isCompleted: false,
   subTasks: [],
-  createdAt: "1970-01-01T00:00:00.000Z", // Placeholder, will be updated
+  createdAt: "1970-01-01T00:00:00.000Z", 
   timeAllocation: 30,
-  dueDate: "1970-01-01", // Placeholder, will be updated
+  dueDate: "1970-01-01", 
   category: TASK_CATEGORIES[0],
   reminderEnabled: false,
 };
@@ -49,10 +48,9 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
       if (initialTask) {
         setTask(initialTask);
       } else {
-        // For a new task, initialize with current dates after mount
         setTask({
-          ...EMPTY_TASK_STATIC_DEFAULTS, // Start with static defaults
-          id: '', // Ensure ID is clear for a new task
+          ...EMPTY_TASK_STATIC_DEFAULTS,
+          id: '', 
           createdAt: new Date().toISOString(),
           dueDate: format(new Date(), "yyyy-MM-dd"),
         });
@@ -92,47 +90,47 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ ...task, id: task.id || String(Date.now()) }); // Generate ID if it's a new task
+    onSubmit({ ...task, id: task.id || String(Date.now()) }); 
     onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl glassmorphic font-mono">
+      <DialogContent className="sm:max-w-lg glassmorphic font-mono">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-primary font-pixel">
+          <DialogTitle className="text-xl text-primary font-pixel">
             {initialTask ? 'Edit Quest' : 'Create New Quest'}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="space-y-4 py-3 max-h-[70vh] overflow-y-auto pr-1.5 text-sm">
           <div>
-            <Label htmlFor="title" className="text-primary-foreground/80">Title</Label>
-            <Input id="title" name="title" value={task.title} onChange={handleChange} required className="bg-card/50 border-primary/30 focus:border-accent" />
+            <Label htmlFor="title" className="text-primary-foreground/80 text-xs">Title</Label>
+            <Input id="title" name="title" value={task.title} onChange={handleChange} required className="bg-card/50 border-primary/30 focus:border-accent h-9" />
           </div>
           <div>
-            <Label htmlFor="description" className="text-primary-foreground/80">Description (Optional)</Label>
-            <Textarea id="description" name="description" value={task.description || ''} onChange={handleChange} className="bg-card/50 border-primary/30 focus:border-accent" />
+            <Label htmlFor="description" className="text-primary-foreground/80 text-xs">Description (Optional)</Label>
+            <Textarea id="description" name="description" value={task.description || ''} onChange={handleChange} className="bg-card/50 border-primary/30 focus:border-accent text-sm" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="xp" className="text-primary-foreground/80">XP Value</Label>
-              <Input id="xp" name="xp" type="number" value={task.xp} onChange={handleChange} required className="bg-card/50 border-primary/30 focus:border-accent" />
+              <Label htmlFor="xp" className="text-primary-foreground/80 text-xs">XP Value</Label>
+              <Input id="xp" name="xp" type="number" value={task.xp} onChange={handleChange} required className="bg-card/50 border-primary/30 focus:border-accent h-9" />
             </div>
             <div>
-              <Label htmlFor="timeAllocation" className="text-primary-foreground/80">Time Allocation (minutes)</Label>
-              <Input id="timeAllocation" name="timeAllocation" type="number" value={task.timeAllocation || ''} onChange={handleChange} className="bg-card/50 border-primary/30 focus:border-accent" />
+              <Label htmlFor="timeAllocation" className="text-primary-foreground/80 text-xs">Time Allocation (minutes)</Label>
+              <Input id="timeAllocation" name="timeAllocation" type="number" value={task.timeAllocation || ''} onChange={handleChange} className="bg-card/50 border-primary/30 focus:border-accent h-9" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="dueDate" className="text-primary-foreground/80">Due Date</Label>
+              <Label htmlFor="dueDate" className="text-primary-foreground/80 text-xs">Due Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left font-normal bg-card/50 border-primary/30 hover:bg-card/70"
+                    className="w-full justify-start text-left font-normal bg-card/50 border-primary/30 hover:bg-card/70 h-9 text-sm"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
                     {task.dueDate && task.dueDate !== EMPTY_TASK_STATIC_DEFAULTS.dueDate ? format(parseISO(task.dueDate), "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
@@ -147,36 +145,36 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
               </Popover>
             </div>
             <div>
-              <Label htmlFor="category" className="text-primary-foreground/80">Category</Label>
+              <Label htmlFor="category" className="text-primary-foreground/80 text-xs">Category</Label>
               <Select
                 value={task.category}
                 onValueChange={(value: TaskCategory) => setTask(prev => ({ ...prev, category: value }))}
               >
-                <SelectTrigger className="w-full bg-card/50 border-primary/30">
+                <SelectTrigger className="w-full bg-card/50 border-primary/30 h-9 text-sm">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent className="glassmorphic">
                   {TASK_CATEGORIES.map(cat => (
-                    <SelectItem key={cat} value={cat} className="hover:bg-primary/20 focus:bg-primary/20">{cat.charAt(0).toUpperCase() + cat.slice(1)}</SelectItem>
+                    <SelectItem key={cat} value={cat} className="hover:bg-primary/20 focus:bg-primary/20 text-sm">{cat.charAt(0).toUpperCase() + cat.slice(1)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox id="reminderEnabled" checked={!!task.reminderEnabled} onCheckedChange={(checked) => setTask(prev => ({...prev, reminderEnabled: Boolean(checked)}))} className="border-primary data-[state=checked]:bg-accent" />
-            <Label htmlFor="reminderEnabled" className="text-primary-foreground/80">Enable Reminder (Feature Coming Soon!)</Label>
+          <div className="flex items-center space-x-2 pt-1">
+            <Checkbox id="reminderEnabled" checked={!!task.reminderEnabled} onCheckedChange={(checked) => setTask(prev => ({...prev, reminderEnabled: Boolean(checked)}))} className="border-primary data-[state=checked]:bg-accent h-4 w-4" />
+            <Label htmlFor="reminderEnabled" className="text-primary-foreground/80 text-xs">Enable Reminder (Feature Coming Soon!)</Label>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-primary">Sub-Quests</h3>
+          <div className="space-y-2.5">
+            <h3 className="text-md font-semibold text-primary">Sub-Quests</h3>
             {task.subTasks.map((st, index) => (
-              <GlassCard key={st.id} className="p-3 space-y-2 bg-card/20">
+              <GlassCard key={st.id} className="p-2.5 space-y-1.5 bg-card/20">
                 <Input
                   placeholder="Sub-quest title"
                   value={st.title}
                   onChange={(e) => handleSubtaskChange(index, 'title', e.target.value)}
-                  className="bg-card/50 border-primary/30 focus:border-accent"
+                  className="bg-card/50 border-primary/30 focus:border-accent h-8 text-xs"
                 />
                 <div className="flex items-center gap-2">
                   <Input
@@ -184,20 +182,20 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
                     placeholder="XP"
                     value={st.xp}
                     onChange={(e) => handleSubtaskChange(index, 'xp', e.target.value)}
-                    className="w-1/3 bg-card/50 border-primary/30 focus:border-accent"
+                    className="w-1/3 bg-card/50 border-primary/30 focus:border-accent h-8 text-xs"
                   />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeSubtask(st.id)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeSubtask(st.id)} className="text-muted-foreground hover:text-destructive h-7 w-7">
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </GlassCard>
             ))}
-            <GlassCard className="p-3 space-y-2 bg-card/10">
+            <GlassCard className="p-2.5 space-y-1.5 bg-card/10">
               <Input
                 placeholder="New sub-quest title"
                 value={newSubtaskTitle}
                 onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                className="bg-card/50 border-primary/30 focus:border-accent"
+                className="bg-card/50 border-primary/30 focus:border-accent h-8 text-xs"
               />
               <div className="flex items-center gap-2">
                 <Input
@@ -205,21 +203,21 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
                   placeholder="XP"
                   value={newSubtaskXP}
                   onChange={(e) => setNewSubtaskXP(parseInt(e.target.value) || 0)}
-                  className="w-1/3 bg-card/50 border-primary/30 focus:border-accent"
+                  className="w-1/3 bg-card/50 border-primary/30 focus:border-accent h-8 text-xs"
                 />
-                <Button type="button" onClick={addSubtask} variant="outline" className="hover:bg-primary/10 hover:text-accent">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Sub-Quest
+                <Button type="button" onClick={addSubtask} size="sm" variant="outline" className="hover:bg-primary/10 hover:text-accent text-xs h-8">
+                  <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Add Sub-Quest
                 </Button>
               </div>
             </GlassCard>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline" className="hover:bg-muted/20">Cancel</Button>
+              <Button type="button" size="sm" variant="outline" className="hover:bg-muted/20">Cancel</Button>
             </DialogClose>
-            <Button type="submit" className="bg-primary hover:bg-primary/80">
-              <Save className="mr-2 h-4 w-4" /> {initialTask ? 'Save Changes' : 'Create Quest'}
+            <Button type="submit" size="sm" className="bg-primary hover:bg-primary/80">
+              <Save className="mr-1.5 h-3.5 w-3.5" /> {initialTask ? 'Save Changes' : 'Create Quest'}
             </Button>
           </DialogFooter>
         </form>
@@ -227,5 +225,3 @@ export function GoalForm({ isOpen, onOpenChange, onSubmit, initialTask }: GoalFo
     </Dialog>
   );
 }
-
-    
