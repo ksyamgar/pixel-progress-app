@@ -57,19 +57,28 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
   };
   
   const DayCellContent = ({ date }: { date: Date }) => {
+    const dateText = date.getDate();
     const dayTasks = calendarEvents.filter(event => isSameDay(parseISO(event.date), date));
-    const completedCount = dayTasks.filter(t => t.isCompleted).length;
-    const totalCount = dayTasks.length;
 
-    if (totalCount === 0) return <div className="h-full w-full"></div>;
-
-    return (
-      <div className="absolute bottom-0.5 right-0.5 flex items-center justify-center h-3.5 w-3.5 rounded-full text-xs font-bold
-        ${completedCount === totalCount ? 'bg-accent text-accent-foreground' : 'bg-primary/50 text-primary-foreground'}
-        border border-background text-[0.6rem]">
-        {totalCount}
-      </div>
-    );
+    if (dayTasks.length > 0) {
+      const completedCount = dayTasks.filter(t => t.isCompleted).length;
+      const totalCount = dayTasks.length;
+      const indicator = (
+        <div className={`absolute bottom-0.5 right-0.5 flex items-center justify-center h-3.5 w-3.5 rounded-full text-xs font-bold
+          ${completedCount === totalCount ? 'bg-accent text-accent-foreground' : 'bg-primary/50 text-primary-foreground'}
+          border border-background text-[0.6rem] z-0`}>
+          {totalCount}
+        </div>
+      );
+      return (
+        <>
+          <span className="relative z-10">{dateText}</span>
+          {indicator}
+        </>
+      );
+    }
+    // Render only the date number if no tasks are present for this day
+    return <>{dateText}</>;
   };
 
   if (!currentMonth) {
@@ -106,7 +115,7 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
         />
       </GlassCard>
 
-      <GlassCard className="md:col-span-1 p-3 space-y-2.5 min-h-[280px] max-h-[calc(100vh-180px)] overflow-y-auto">
+      <GlassCard className="md:col-span-1 p-3 space-y-2.5 min-h-[280px] max-h-[calc(100vh-230px)] md:max-h-[calc(100vh-180px)] overflow-y-auto">
         <h3 className="text-lg font-pixel text-primary mb-2">
           {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
         </h3>
