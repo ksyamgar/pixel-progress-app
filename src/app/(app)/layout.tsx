@@ -131,7 +131,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
       </Sidebar>
       <SidebarInset className="flex flex-col bg-background">
         <Header userName={userName} />
-        <main className="flex-1 overflow-y-auto p-2 sm:p-3"> {/* Increased padding */}
+        <main className="flex-1 overflow-y-auto max-sm:p-1 sm:p-2 md:p-3">
           {children}
         </main>
       </SidebarInset>
