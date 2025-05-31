@@ -83,7 +83,7 @@ export default function DashboardPage() {
             <GlassCard className="p-4">
                <h3 className="text-xl font-semibold text-accent mb-2 flex items-center"><Zap className="mr-2 h-6 w-6 text-red-500" />AI Rival XP</h3>
                <p className="text-4xl font-bold text-primary-foreground">{rivalXP}</p>
-               <Image data-ai-hint="robot enemy" src="https://placehold.co/200x100.png" alt="AI Rival Visual" width={200} height={100} className="mt-2 rounded-md opacity-70 mx-auto" />
+               <Image data-ai-hint="robot enemy" src="https://source.unsplash.com/random/200x100?robot,enemy" alt="AI Rival Visual" width={200} height={100} className="mt-2 rounded-md opacity-70 mx-auto" />
             </GlassCard>
           </div>
         </CardContent>
@@ -147,10 +147,10 @@ export default function DashboardPage() {
         <CardContent className="pt-6">
           <h3 className="font-pixel text-xl text-primary mb-4">Game Art Inspiration</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Image data-ai-hint="pixel character" src="https://placehold.co/150x150.png" alt="Pixel Art 1" width={150} height={150} className="rounded-md border-2 border-accent/50 opacity-80 hover:opacity-100 transition-opacity" />
-            <Image data-ai-hint="pixel landscape" src="https://placehold.co/150x150.png" alt="Pixel Art 2" width={150} height={150} className="rounded-md border-2 border-accent/50 opacity-80 hover:opacity-100 transition-opacity" />
-            <Image data-ai-hint="8bit item" src="https://placehold.co/150x150.png" alt="Pixel Art 3" width={150} height={150} className="rounded-md border-2 border-accent/50 opacity-80 hover:opacity-100 transition-opacity" />
-            <Image data-ai-hint="pixel monster" src="https://placehold.co/150x150.png" alt="Pixel Art 4" width={150} height={150} className="rounded-md border-2 border-accent/50 opacity-80 hover:opacity-100 transition-opacity" />
+            <Image data-ai-hint="pixel character" src="https://source.unsplash.com/random/150x150?pixel,character" alt="Pixel Art 1" width={150} height={150} className="rounded-md border-2 border-accent/50 opacity-80 hover:opacity-100 transition-opacity" />
+            <Image data-ai-hint="pixel landscape" src="https://source.unsplash.com/random/150x150?pixel,landscape" alt="Pixel Art 2" width={150} height={150} className="rounded-md border-2 border-accent/50 opacity-80 hover:opacity-100 transition-opacity" />
+            <Image data-ai-hint="8bit item" src="https://source.unsplash.com/random/150x150?8bit,item" alt="Pixel Art 3" width={150} height={150} className="rounded-md border-2 border-accent/50 opacity-80 hover:opacity-100 transition-opacity" />
+            <Image data-ai-hint="pixel monster" src="https://source.unsplash.com/random/150x150?pixel,monster" alt="Pixel Art 4" width={150} height={150} className="rounded-md border-2 border-accent/50 opacity-80 hover:opacity-100 transition-opacity" />
           </div>
         </CardContent>
       </GlassCard>
