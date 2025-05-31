@@ -402,7 +402,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                       onCheckedChange={() => toggleTaskCompletion(task.id)}
                       className="mr-2 h-4 w-4 border-primary data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground"
                     />
-                    <label htmlFor={`task-${task.id}`} className={`font-mono text-xs md:text-sm truncate min-w-0 ${task.isCompleted ? 'line-through text-muted-foreground' : 'text-primary-foreground'}`}>
+                    <label htmlFor={`task-${task.id}`} className={`font-mono text-xs md:text-sm truncate min-w-0 max-w-[140px] md:max-w-none ${task.isCompleted ? 'line-through text-muted-foreground' : 'text-primary-foreground'}`}>
                       {task.title}
                     </label>
                   </div>
@@ -766,5 +766,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     </div>
   );
 }
+
+    
 
     
