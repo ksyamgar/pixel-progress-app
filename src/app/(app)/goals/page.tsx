@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { Button } from "@/components/ui/button";
 import { GoalCard } from "@/components/goals/goal-card";
 import { GoalForm } from "@/components/goals/goal-form";
@@ -27,13 +28,18 @@ const initialTasks: Task[] = [
   { id: "g3", title: "Develop Pixel Progress App", description: "Implement core features for the app.", xp: 500, isCompleted: false, subTasks: [], createdAt: "2024-07-28T10:10:00.000Z", category: "work", dueDate: "2024-09-15" },
 ];
 
+interface GoalsPageProps {
+  userXP?: number; // userXP is now a prop
+  setUserXP?: Dispatch<SetStateAction<number>>; // setUserXP is now a prop
+  userName?: string;
+}
 
-export default function GoalsPage() {
+export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPageProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [userXP, setUserXP] = useState(1250); // Placeholder
+  // userXP and setUserXP are now props
   const { toast } = useToast();
 
   const handleOpenForm = (task?: Task) => {
@@ -78,8 +84,10 @@ export default function GoalsPage() {
 
             if(newOverallCompletedStatus && !originalTaskCompleted && task.subTasks.length > 0) taskXPChange += task.xp;
             if(!newOverallCompletedStatus && originalTaskCompleted && task.subTasks.length > 0) taskXPChange -= task.xp;
-
-            setUserXP(prevXP => prevXP + taskXPChange);
+            
+            if (taskXPChange !== 0) {
+              setUserXP(prevXP => prevXP + taskXPChange);
+            }
             return { ...task, subTasks: updatedSubTasks, isCompleted: newOverallCompletedStatus };
 
           } else { // Toggling main task
@@ -93,8 +101,10 @@ export default function GoalsPage() {
                     if(!st.isCompleted) taskXPChange += st.xp;
                 });
             }
-
-            setUserXP(prevXP => prevXP + taskXPChange);
+            
+            if (taskXPChange !== 0) {
+                setUserXP(prevXP => prevXP + taskXPChange);
+            }
             return { ...task, isCompleted: newCompletedStatus, subTasks: updatedSubTasks };
           }
         }
@@ -112,7 +122,7 @@ export default function GoalsPage() {
 
   const handleClearProgress = () => {
     setTasks([]);
-    setUserXP(0);
+    setUserXP(0); // Use the passed-in setUserXP
     toast({
       title: "Progress Reset",
       description: "All your quests and XP have been cleared.",

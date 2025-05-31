@@ -2,7 +2,7 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -21,11 +21,12 @@ import Image from 'next/image';
 
 // This new inner component will render the actual layout and can safely use the useSidebar hook
 function MainAppLayoutContent({ children }: { children: ReactNode }) {
-  const { state, openMobile, isMobile, toggleSidebar, setOpenMobile } = useSidebar(); // Now called safely within SidebarProvider's context
+  const { state, openMobile, isMobile, toggleSidebar, setOpenMobile } = useSidebar();
   const [userAvatar, setUserAvatar] = useState("https://placehold.co/60x60.png");
   const [userName, setUserName] = useState("Pixel User");
   const [isEditingName, setIsEditingName] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [userXP, setUserXP] = useState(1250); // XP state is now managed here
 
   const handleAvatarClick = () => {
     if (isEditingName) return;
@@ -62,13 +63,11 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
       <Sidebar variant="sidebar" collapsible="icon" className="border-r-border/30 text-xs">
         <SidebarHeader className="p-1.5">
           <div className="flex justify-end items-center w-full mb-1 group-data-[collapsible=icon]:hidden">
-            {/* Close button for expanded sidebar on desktop */}
             {state === 'expanded' && !isMobile && (
               <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-6 w-6 text-sidebar-foreground hover:text-accent-foreground">
                 <ChevronsLeft className="h-3.5 w-3.5" />
               </Button>
             )}
-             {/* Close button for open sidebar on mobile */}
             {isMobile && openMobile && (
               <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)} className="h-6 w-6 text-sidebar-foreground hover:text-accent-foreground">
                 <X className="h-4 w-4" />
@@ -130,9 +129,15 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col bg-background">
-        <Header userName={userName} />
-        <main className="flex-1 overflow-y-auto max-sm:p-1 sm:p-2 md:p-3">
-          {children}
+        <Header userName={userName} userXP={userXP} />
+        <main className="flex-1 overflow-y-auto max-sm:p-1.5 sm:p-2.5 md:p-3.5">
+          {React.Children.map(children, (child) => {
+            if (React.isValidElement(child)) {
+              // @ts-ignore
+              return React.cloneElement(child, { userXP, setUserXP, userName });
+            }
+            return child;
+          })}
         </main>
       </SidebarInset>
     </>
@@ -141,7 +146,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <SidebarProvider defaultOpen> {/* defaultOpen controls initial desktop state */}
+    <SidebarProvider defaultOpen>
       <MainAppLayoutContent>{children}</MainAppLayoutContent>
     </SidebarProvider>
   );

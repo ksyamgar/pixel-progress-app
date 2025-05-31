@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,11 +28,16 @@ const initialTasks: Task[] = [
   { id: "qt4", title: "Reply to important emails", xp: 20, isCompleted: false, subTasks: [], createdAt: "2024-07-30T09:00:00.000Z", category: "work", timeAllocation: 45, images: [], notes: "Client X, Project Y follow-up.", dataAiHints: [] },
 ];
 
+interface DashboardPageProps {
+  userXP?: number;
+  setUserXP?: Dispatch<SetStateAction<number>>;
+  userName?: string; // userName is also passed from layout
+}
 
-export default function DashboardPage() {
+export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: DashboardPageProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [userXP, setUserXP] = useState(1250);
+  // userXP and setUserXP are now props
   const [rivalXP, setRivalXP] = useState(1100);
   
   const [inspirationImages, setInspirationImages] = useState<string[]>([
@@ -361,157 +367,157 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 md:space-y-4">
        <GlassCard>
-        <CardHeader className="p-2">
-          <CardTitle className="text-sm text-primary flex items-center"><ListChecks className="mr-1.5 h-3.5 w-3.5" />Today's Quests</CardTitle>
+        <CardHeader className="p-3 md:p-4">
+          <CardTitle className="text-base md:text-lg text-primary flex items-center"><ListChecks className="mr-2 h-4 w-4 md:h-5 md:w-5" />Today's Quests</CardTitle>
         </CardHeader>
-        <CardContent className="p-2">
-          <div className="flex gap-1.5 mb-1.5">
+        <CardContent className="p-3 md:p-4 pt-0">
+          <div className="flex gap-2 mb-2 md:mb-3">
             <Input
               type="text"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               placeholder="New quick quest..."
-              className="font-mono bg-background/50 border-primary/50 focus:border-accent h-7 text-xs"
+              className="font-mono bg-background/50 border-primary/50 focus:border-accent h-8 md:h-9 text-xs md:text-sm"
               onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
             />
-            <Button onClick={handleAddTask} variant="default" size="sm" className="bg-primary hover:bg-primary/80 font-mono h-7 text-xs px-1.5">
-              <PlusCircle className="mr-0.5 h-3 w-3" /> Add
+            <Button onClick={handleAddTask} variant="default" size="sm" className="bg-primary hover:bg-primary/80 font-mono h-8 md:h-9 text-xs px-2 md:px-3">
+              <PlusCircle className="mr-1 h-3.5 w-3.5 md:h-4 md:w-4" /> Add
             </Button>
           </div>
 
           {tasks.length === 0 && (
-            <p className="text-center text-muted-foreground py-1.5 text-xs">No quests for today. Add some!</p>
+            <p className="text-center text-muted-foreground py-3 text-xs md:text-sm">No quests for today. Add some!</p>
           )}
 
-          <Accordion type="multiple" className="w-full space-y-1">
+          <Accordion type="multiple" className="w-full space-y-1.5 md:space-y-2">
             {tasks.map(task => (
-              <AccordionItem value={task.id} key={task.id} className="p-1.5 rounded bg-card/70 border border-border/30 shadow-sm hover:shadow-primary/5 transition-shadow data-[state=open]:border-accent/40 text-xs">
+              <AccordionItem value={task.id} key={task.id} className="p-2 md:p-2.5 rounded-md bg-card/70 border border-border/30 shadow-sm hover:shadow-primary/5 transition-shadow data-[state=open]:border-accent/40 text-xs md:text-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center flex-1 min-w-0">
                     <Checkbox
                       id={`task-${task.id}`}
                       checked={task.isCompleted}
                       onCheckedChange={() => toggleTaskCompletion(task.id)}
-                      className="mr-1.5 h-3.5 w-3.5 border-primary data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground"
+                      className="mr-2 h-4 w-4 border-primary data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground"
                     />
-                    <label htmlFor={`task-${task.id}`} className={`font-mono text-xs truncate ${task.isCompleted ? 'line-through text-muted-foreground' : 'text-primary-foreground'}`}>
+                    <label htmlFor={`task-${task.id}`} className={`font-mono text-xs md:text-sm truncate ${task.isCompleted ? 'line-through text-muted-foreground' : 'text-primary-foreground'}`}>
                       {task.title}
                     </label>
                   </div>
-                  <div className="flex items-center space-x-1 ml-1 shrink-0">
-                    <span className="text-xs font-mono py-0.5 px-1 rounded-sm bg-accent/20 text-accent border border-accent/30">
+                  <div className="flex items-center space-x-1.5 ml-1.5 shrink-0">
+                    <span className="text-xs md:text-sm font-mono py-0.5 px-1.5 rounded-sm bg-accent/20 text-accent border border-accent/30">
                       +{task.xp} XP
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditTaskDialog(task)} className="text-muted-foreground hover:text-accent h-5 w-5 p-0.5">
-                      <Edit3 className="h-2.5 w-2.5" />
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditTaskDialog(task)} className="text-muted-foreground hover:text-accent h-6 w-6 p-1">
+                      <Edit3 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-5 w-5 p-0.5">
-                          <Trash2 className="h-2.5 w-2.5" />
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-6 w-6 p-1">
+                          <Trash2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent className="font-mono glassmorphic">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="font-pixel text-primary">Confirm Deletion</AlertDialogTitle>
-                          <AlertDialogDescription className="text-xs">
+                          <AlertDialogDescription className="text-xs md:text-sm">
                             Are you sure you want to delete the quest: "{task.title}"? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="text-xs h-7">Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteTask(task.id)} className="text-xs h-7 bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                          <AlertDialogCancel className="text-xs md:text-sm h-8">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteTask(task.id)} className="text-xs md:text-sm h-8 bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                     {(task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") ? (
-                      <AccordionTrigger className="p-1 hover:bg-accent/10 rounded-sm h-5 w-5 data-[state=open]:text-accent [&[data-state=open]>svg]:text-accent">
-                         <ChevronDown className="h-3 w-3 transition-transform duration-200" />
+                      <AccordionTrigger className="p-1 hover:bg-accent/10 rounded-sm h-6 w-6 data-[state=open]:text-accent [&[data-state=open]>svg]:text-accent">
+                         <ChevronDown className="h-3.5 w-3.5 md:h-4 md:w-4 transition-transform duration-200" />
                       </AccordionTrigger>
-                    ) : <div className="w-5 h-5"/> }
+                    ) : <div className="w-6 h-6"/> }
                   </div>
                 </div>
-                <AccordionContent className="pt-1.5 mt-1 border-t border-border/30 space-y-1.5">
+                <AccordionContent className="pt-2 mt-2 border-t border-border/30 space-y-2">
                   {((task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id) && (
-                    <div className="flex flex-col sm:flex-row gap-1.5">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       
                       <div className={`flex flex-col ${task.notes && task.notes.trim() !== "" || editingNotesTaskId === task.id ? 'sm:w-2/3' : 'w-full'}`}>
-                        <h4 className="text-xs font-semibold text-accent mb-1 flex items-center"><ImageIcon className="h-3 w-3 mr-1"/>Images:</h4>
+                        <h4 className="text-xs md:text-sm font-semibold text-accent mb-1.5 flex items-center"><ImageIcon className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1.5"/>Images:</h4>
                         {task.images && task.images.length > 0 && (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 mb-1">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-1.5">
                             {task.images.map((src, idx) => (
                               <div key={idx} className="relative aspect-square group">
                                 <img 
                                   src={src} 
                                   data-ai-hint={task.dataAiHints?.[idx] || "task image"}
                                   alt={`Task image ${idx+1}`} 
-                                  className="w-full h-full object-cover rounded border border-accent/20 group-hover:opacity-70 transition-opacity cursor-pointer"
+                                  className="w-full h-full object-cover rounded-md border border-accent/20 group-hover:opacity-70 transition-opacity cursor-pointer"
                                   onClick={() => openInspirationImageInOverlay(src)}
                                   />
                                 <Button
                                   variant="destructive"
                                   size="icon"
-                                  className="absolute top-0.5 right-0.5 h-4 w-4 p-0.5 opacity-50 group-hover:opacity-100 transition-opacity z-10"
+                                  className="absolute top-1 right-1 h-5 w-5 p-0.5 opacity-50 group-hover:opacity-100 transition-opacity z-10"
                                   onClick={() => removeTaskImageInline(task.id, idx)}
                                 >
-                                  <XCircle className="h-2.5 w-2.5" />
+                                  <XCircle className="h-3 w-3" />
                                 </Button>
                               </div>
                             ))}
                           </div>
                         )}
-                         {(task.images?.length === 0 || !task.images) && editingNotesTaskId !== task.id && <p className="text-xs text-muted-foreground mb-1">No images yet.</p>}
+                         {(task.images?.length === 0 || !task.images) && editingNotesTaskId !== task.id && <p className="text-xs md:text-sm text-muted-foreground mb-1.5">No images yet.</p>}
                          <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="w-full h-6 text-xs mt-auto"
+                          className="w-full h-7 text-xs md:text-sm mt-auto"
                           onClick={() => {
                             setTaskIdForInlineImageUpload(task.id);
                             inlineTaskImageFileRef.current?.click();
                           }}
                         >
-                          <Upload className="h-3 w-3 mr-1" /> Add Image
+                          <Upload className="h-3.5 w-3.5 mr-1.5" /> Add Image
                         </Button>
                       </div>
                       
 
                       {(task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id ? (
-                        <div className={`flex flex-col ${task.images && task.images.length > 0 ? 'sm:w-1/3' : 'w-full mt-1.5 sm:mt-0'} flex-grow`}>
-                          <h4 className="text-xs font-semibold text-accent mb-1 flex items-center shrink-0"><BookOpen className="h-3 w-3 mr-1"/>Notes:</h4>
+                        <div className={`flex flex-col ${task.images && task.images.length > 0 ? 'sm:w-1/3' : 'w-full mt-2 sm:mt-0'} flex-grow`}>
+                          <h4 className="text-xs md:text-sm font-semibold text-accent mb-1.5 flex items-center shrink-0"><BookOpen className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1.5"/>Notes:</h4>
                           {editingNotesTaskId === task.id ? (
-                            <div className="flex flex-col space-y-1 flex-grow">
+                            <div className="flex flex-col space-y-1.5 flex-grow">
                               <Textarea
                                 value={currentInlineNotes}
                                 onChange={handleInlineNotesChange}
-                                className="text-xs bg-background/70 border-primary/30 flex-grow min-h-[100px]"
+                                className="text-xs md:text-sm bg-background/70 border-primary/30 flex-grow min-h-[100px]"
                               />
                               <div className="flex gap-1.5 shrink-0 mt-auto">
-                                <Button onClick={handleSaveInlineNotes} size="sm" className="h-6 text-xs flex-1 bg-primary hover:bg-primary/80">
-                                  <Save className="h-2.5 w-2.5 mr-1"/>Save
+                                <Button onClick={handleSaveInlineNotes} size="sm" className="h-7 text-xs md:text-sm flex-1 bg-primary hover:bg-primary/80">
+                                  <Save className="h-3 w-3 mr-1"/>Save
                                 </Button>
-                                <Button variant="outline" onClick={handleCancelInlineNotesEdit} size="sm" className="h-6 text-xs flex-1">Cancel</Button>
+                                <Button variant="outline" onClick={handleCancelInlineNotesEdit} size="sm" className="h-7 text-xs md:text-sm flex-1">Cancel</Button>
                               </div>
                             </div>
                           ) : (
                             <div className="flex flex-col flex-grow">
-                              <ScrollArea className="text-xs text-muted-foreground whitespace-pre-wrap bg-black/10 p-1.5 rounded border border-border/20 flex-grow min-h-[80px]">
+                              <ScrollArea className="text-xs md:text-sm text-muted-foreground whitespace-pre-wrap bg-black/10 p-1.5 rounded-md border border-border/20 flex-grow min-h-[80px]">
                                 {task.notes}
                               </ScrollArea>
-                              <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-6 text-xs mt-auto shrink-0">
-                                <Edit3 className="h-2.5 w-2.5 mr-1"/> Edit Notes
+                              <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-7 text-xs md:text-sm mt-auto shrink-0">
+                                <Edit3 className="h-3 w-3 mr-1"/> Edit Notes
                               </Button>
                             </div>
                           )}
                         </div>
                        ) : (task.images && task.images.length > 0) ? ( 
                          <div className="flex flex-col sm:w-1/3 flex-grow">
-                            <h4 className="text-xs font-semibold text-accent mb-1 flex items-center shrink-0"><BookOpen className="h-3 w-3 mr-1"/>Notes:</h4>
-                             <p className="text-xs text-muted-foreground mb-1 flex-grow">No notes yet.</p>
-                            <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-6 text-xs mt-auto shrink-0">
-                                <Edit3 className="h-2.5 w-2.5 mr-1"/> Add Notes
+                            <h4 className="text-xs md:text-sm font-semibold text-accent mb-1.5 flex items-center shrink-0"><BookOpen className="h-3.5 w-3.5 mr-1.5"/>Notes:</h4>
+                             <p className="text-xs md:text-sm text-muted-foreground mb-1.5 flex-grow">No notes yet.</p>
+                            <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-7 text-xs md:text-sm mt-auto shrink-0">
+                                <Edit3 className="h-3 w-3 mr-1"/> Add Notes
                             </Button>
                          </div>
                        ) : null 
@@ -534,30 +540,30 @@ export default function DashboardPage() {
       </GlassCard>
       
       <GlassCard className="font-pixel">
-        <CardHeader className="p-2">
-          <CardTitle className="text-sm text-primary flex items-center"><Target className="mr-1.5 h-3.5 w-3.5" /> Daily Mission Control</CardTitle>
+        <CardHeader className="p-3 md:p-4">
+          <CardTitle className="text-base md:text-lg text-primary flex items-center"><Target className="mr-2 h-4 w-4 md:h-5 md:w-5" /> Daily Mission Control</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-1.5 p-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            <GlassCard className="p-1.5">
-              <h3 className="text-sm font-semibold text-accent mb-1 flex items-center"><Zap className="mr-1 h-3 w-3 text-yellow-400" />Your XP</h3>
-              <p className="text-base font-bold text-primary-foreground">{userXP}</p>
-              <Progress value={progressPercentage} className="mt-1 h-1 bg-primary/30 [&>div]:bg-accent" />
-              <p className="text-xs text-muted-foreground mt-1">{Math.round(progressPercentage)}% of daily tasks XP earned.</p>
+        <CardContent className="space-y-2 p-3 md:p-4 pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <GlassCard className="p-2 md:p-2.5">
+              <h3 className="text-base font-semibold text-accent mb-1.5 flex items-center"><Zap className="mr-1.5 h-4 w-4 text-yellow-400" />Your XP</h3>
+              <p className="text-lg font-bold text-primary-foreground">{userXP}</p>
+              <Progress value={progressPercentage} className="mt-1.5 h-1.5 bg-primary/30 [&>div]:bg-accent" />
+              <p className="text-xs text-muted-foreground mt-1.5">{Math.round(progressPercentage)}% of daily tasks XP earned.</p>
             </GlassCard>
-            <GlassCard className="p-1.5">
-               <h3 className="text-sm font-semibold text-accent mb-1 flex items-center"><Zap className="mr-1 h-3 w-3 text-red-500" />AI Rival XP</h3>
-               <p className="text-base font-bold text-primary-foreground">{rivalXP}</p>
-                <div className="relative group cursor-pointer mt-1" onClick={handleRivalImageClick}>
+            <GlassCard className="p-2 md:p-2.5">
+               <h3 className="text-base font-semibold text-accent mb-1.5 flex items-center"><Zap className="mr-1.5 h-4 w-4 text-red-500" />AI Rival XP</h3>
+               <p className="text-lg font-bold text-primary-foreground">{rivalXP}</p>
+                <div className="relative group cursor-pointer mt-1.5" onClick={handleRivalImageClick}>
                   <NextImage 
                     src={rivalImageSrc} 
                     data-ai-hint="robot enemy" 
                     alt="AI Rival Visual" 
                     width={200} 
                     height={100} 
-                    className="rounded-sm opacity-70 mx-auto max-h-[36px] object-cover group-hover:opacity-50 transition-opacity" 
+                    className="rounded-sm opacity-70 mx-auto max-h-[40px] object-cover group-hover:opacity-50 transition-opacity" 
                   />
-                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 rounded-sm transition-opacity max-h-[36px] mt-0">
+                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 rounded-sm transition-opacity max-h-[40px] mt-0">
                      <UploadCloud className="h-4 w-4 text-white/70" />
                    </div>
                 </div>
@@ -574,29 +580,29 @@ export default function DashboardPage() {
       </GlassCard>
       
       <GlassCard>
-        <CardHeader className="p-2">
-           <h3 className="font-pixel text-sm text-primary flex items-center"><ImageIcon className="mr-1.5 h-3.5 w-3.5" />My Game Art Inspirations</h3>
+        <CardHeader className="p-3 md:p-4">
+           <h3 className="font-pixel text-base md:text-lg text-primary flex items-center"><ImageIcon className="mr-2 h-4 w-4 md:h-5 md:w-5" />My Game Art Inspirations</h3>
         </CardHeader>
-        <CardContent className="p-2 pt-0">
-          <div className="space-y-1.5">
+        <CardContent className="p-3 md:p-4 pt-0">
+          <div className="space-y-2">
             {inspirationImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 mt-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 mt-2">
                 {inspirationImages.map((src, index) => (
                   <div key={index} className="relative group aspect-square">
                     <img 
                       src={src} 
                       alt={`Inspiration ${index + 1}`} 
                       data-ai-hint={inspirationDataAiHints[index] || "inspiration"}
-                      className="w-full h-full object-cover rounded-sm cursor-pointer border border-accent/30 hover:opacity-80 transition-opacity"
+                      className="w-full h-full object-cover rounded-md cursor-pointer border border-accent/30 hover:opacity-80 transition-opacity"
                       onClick={() => openInspirationImageInOverlay(src)}
                     />
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="absolute top-1 right-1 h-4 w-4 p-0.5 opacity-50 group-hover:opacity-100 transition-opacity z-10"
+                      className="absolute top-1.5 right-1.5 h-5 w-5 p-0.5 opacity-50 group-hover:opacity-100 transition-opacity z-10"
                       onClick={() => removeInspirationImage(index)}
                     >
-                      <XCircle className="h-2.5 w-2.5" />
+                      <XCircle className="h-3 w-3" />
                     </Button>
                   </div>
                 ))}
@@ -604,27 +610,27 @@ export default function DashboardPage() {
             )}
             
             {(inspirationImages.length === 0 && !showInspirationCamera) && (
-              <div className="text-center py-1.5 text-muted-foreground text-xs">
+              <div className="text-center py-2 text-muted-foreground text-xs md:text-sm">
                 No inspiration images. Upload or capture some!
               </div>
             )}
 
             {showInspirationCamera && (
-              <div className="space-y-1">
-                <video ref={inspirationVideoRef} className="w-full aspect-video rounded-sm bg-black" autoPlay muted playsInline />
+              <div className="space-y-1.5">
+                <video ref={inspirationVideoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
                 {hasInspirationCameraPermission === false && (
-                    <Alert variant="destructive" className="text-xs py-1 px-1.5">
-                        <Camera className="h-3 w-3" />
+                    <Alert variant="destructive" className="text-xs py-1.5 px-2">
+                        <Camera className="h-3.5 w-3.5" />
                         <AlertTitle className="text-xs font-semibold">Camera Access Denied</AlertTitle>
                         <AlertDescription className="text-xs">Enable camera permissions.</AlertDescription>
                     </Alert>
                 )}
-                 {hasInspirationCameraPermission === null && <p className="text-xs text-muted-foreground text-center">Requesting camera...</p>}
+                 {hasInspirationCameraPermission === null && <p className="text-xs md:text-sm text-muted-foreground text-center">Requesting camera...</p>}
                 <div className="flex gap-1.5">
-                  <Button onClick={captureInspirationImage} size="sm" className="flex-1 h-7 text-xs" disabled={hasInspirationCameraPermission !== true}>
-                    <Camera className="mr-1 h-3 w-3" /> Capture
+                  <Button onClick={captureInspirationImage} size="sm" className="flex-1 h-8 text-xs md:text-sm" disabled={hasInspirationCameraPermission !== true}>
+                    <Camera className="mr-1.5 h-3.5 w-3.5" /> Capture
                   </Button>
-                  <Button variant="outline" onClick={stopInspirationCamera} size="sm" className="flex-1 h-7 text-xs">
+                  <Button variant="outline" onClick={stopInspirationCamera} size="sm" className="flex-1 h-8 text-xs md:text-sm">
                     Cancel
                   </Button>
                 </div>
@@ -634,12 +640,12 @@ export default function DashboardPage() {
 
             {!showInspirationCamera && (
               <div className="flex flex-col sm:flex-row gap-1.5">
-                <Button onClick={() => inspirationFileRef.current?.click()} size="sm" variant="outline" className="flex-1 h-7 text-xs">
-                  <Upload className="mr-1 h-3 w-3" /> Upload Image
+                <Button onClick={() => inspirationFileRef.current?.click()} size="sm" variant="outline" className="flex-1 h-8 text-xs md:text-sm">
+                  <Upload className="mr-1.5 h-3.5 w-3.5" /> Upload Image
                 </Button>
                 <Input type="file" ref={inspirationFileRef} onChange={handleInspirationImageUpload} accept="image/*" className="hidden" multiple />
-                <Button onClick={startInspirationCamera} size="sm" variant="outline" className="flex-1 h-7 text-xs">
-                  <Camera className="mr-1 h-3 w-3" /> Use Camera
+                <Button onClick={startInspirationCamera} size="sm" variant="outline" className="flex-1 h-8 text-xs md:text-sm">
+                  <Camera className="mr-1.5 h-3.5 w-3.5" /> Use Camera
                 </Button>
               </div>
             )}
