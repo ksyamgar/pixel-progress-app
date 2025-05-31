@@ -59,40 +59,36 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
   const DayCellContent = ({ date }: { date: Date }) => {
     const dateText = date.getDate();
     const dayTasks = calendarEvents.filter(event => isSameDay(parseISO(event.date), date));
+    const indicator = dayTasks.length > 0 ? (
+      <div className={`absolute bottom-0.5 right-0.5 flex items-center justify-center h-3.5 w-3.5 rounded-full text-xs font-bold
+        ${dayTasks.every(t => t.isCompleted) ? 'bg-accent text-accent-foreground' : 'bg-primary/50 text-primary-foreground'}
+        border border-background text-[0.6rem] z-0`}>
+        {dayTasks.length}
+      </div>
+    ) : null;
 
-    if (dayTasks.length > 0) {
-      const completedCount = dayTasks.filter(t => t.isCompleted).length;
-      const totalCount = dayTasks.length;
-      const indicator = (
-        <div className={`absolute bottom-0.5 right-0.5 flex items-center justify-center h-3.5 w-3.5 rounded-full text-xs font-bold
-          ${completedCount === totalCount ? 'bg-accent text-accent-foreground' : 'bg-primary/50 text-primary-foreground'}
-          border border-background text-[0.6rem] z-0`}>
-          {totalCount}
-        </div>
-      );
-      return (
-        <>
-          <span className="relative z-10">{dateText}</span>
-          {indicator}
-        </>
-      );
-    }
-    return <span className="relative z-10">{dateText}</span>;
+    return (
+      <>
+        <span className="relative z-10">{dateText}</span>
+        {indicator}
+      </>
+    );
   };
+
 
   if (!currentMonth) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 font-mono">
-        <GlassCard className="md:col-span-3 p-0 min-h-[320px]" /> 
-        <GlassCard className="md:col-span-2 p-3 space-y-2.5 min-h-[280px] md:max-h-[calc(100vh-230px)] overflow-y-auto" />
+      <div className="grid grid-cols-1 md:grid-cols-[min-content_1fr] gap-4 font-mono">
+        <GlassCard className="p-0 min-h-[320px]" /> 
+        <GlassCard className="p-3 space-y-2.5 min-h-[280px] md:max-h-[calc(100vh-230px)] overflow-y-auto" />
       </div>
     );
   }
 
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 font-mono">
-      <GlassCard className="md:col-span-3 p-0">
+    <div className="grid grid-cols-1 md:grid-cols-[min-content_1fr] gap-4 font-mono">
+      <GlassCard className="p-0">
         <Calendar
           mode="single"
           selected={selectedDate}
@@ -114,7 +110,7 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
         />
       </GlassCard>
 
-      <GlassCard className="md:col-span-2 p-3 space-y-2.5 min-h-[280px] md:max-h-[calc(100vh-230px)] overflow-y-auto">
+      <GlassCard className="p-3 space-y-2.5 min-h-[280px] md:max-h-[calc(100vh-230px)] overflow-y-auto">
         <h3 className="text-lg font-pixel text-primary mb-2">
           {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
         </h3>
@@ -154,4 +150,3 @@ export function CalendarView({ tasks, onReviveTask }: CalendarViewProps) {
     </div>
   );
 }
-
