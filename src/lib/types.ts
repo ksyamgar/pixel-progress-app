@@ -7,7 +7,7 @@ export interface SubTask {
 }
 
 export interface Task {
-  id: string;
+  id:string;
   title: string;
   description?: string;
   xp: number;
@@ -18,6 +18,7 @@ export interface Task {
   createdAt: string; // ISO string
   reminderEnabled?: boolean;
   category?: string; // For icon mapping
+  image?: string; // Data URI for attached image
 }
 
 export interface AIRival {
@@ -38,7 +39,7 @@ export interface CalendarTaskEvent {
   date: string; // YYYY-MM-DD
   xp: number;
   isCompleted: boolean;
-  originalTaskId: string; 
+  originalTaskId: string;
 }
 
 export const TASK_CATEGORIES = ["work", "study", "fitness", "hobby", "chore"] as const;
@@ -50,5 +51,3 @@ export const XP_GAIN_RULES = [
   { id: 'dailyFlatRate', name: 'Daily Flat Rate' },
 ] as const;
 export type XPGainRuleId = typeof XP_GAIN_RULES[number]['id'];
-
-    
