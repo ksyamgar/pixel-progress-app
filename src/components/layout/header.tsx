@@ -6,19 +6,23 @@ import Link from "next/link";
 import { Gamepad2, ShieldHalf, UserCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import type { UserProfile, AIRival } from "@/lib/types";
+import type { AIRival } from "@/lib/types"; // UserProfile type removed as name comes from prop
 
-const initialUser: UserProfile = { name: "Pixel Pioneer", xp: 1250 };
+// Initial XP for the user. Name will come from props.
+const initialUserXP = 1250;
 const initialRival: AIRival = { xp: 1100, xpGainRule: 'hourly', xpGainValue: 10 };
 
+interface HeaderProps {
+  userName: string;
+}
 
-export function Header() {
-  const [user, setUser] = useState<UserProfile>(initialUser);
+export function Header({ userName }: HeaderProps) {
+  const [userXP, setUserXP] = useState<number>(initialUserXP);
   const [rival, setRival] = useState<AIRival>(initialRival);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setUser(prev => ({ ...prev, xp: prev.xp + Math.floor(Math.random() * 3) })); // Slower XP gain for demo
+      setUserXP(prevXP => prevXP + Math.floor(Math.random() * 3)); // Slower XP gain for demo
       setRival(prev => ({ ...prev, xp: prev.xp + Math.floor(Math.random() * 2) })); // Slower XP gain for demo
     }, 7000); // Longer interval
     return () => clearInterval(interval);
@@ -42,8 +46,8 @@ export function Header() {
           <div className="flex items-center space-x-1.5 p-1.5 rounded-md bg-primary/20 backdrop-blur-sm border border-primary/30 min-w-0"> {/* Added min-w-0 */}
             <UserCircle className="h-4 w-4 text-accent shrink-0" />
             <div className="font-mono text-xs font-medium text-primary-foreground overflow-hidden flex items-center">
-              <span className="truncate max-w-[80px] xs:max-w-[100px] sm:max-w-[150px]">{user.name}</span> {/* Adjusted max-w */}
-              <span className="ml-0.5">: {user.xp} XP</span>
+              <span className="truncate max-w-[80px] xs:max-w-[100px] sm:max-w-[150px]">{userName}</span> {/* Use prop for name */}
+              <span className="ml-0.5">: {userXP} XP</span>
             </div>
             <Zap className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
           </div>

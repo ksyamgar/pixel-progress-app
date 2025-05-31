@@ -130,7 +130,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col bg-background">
-        <Header />
+        <Header userName={userName} />
         <main className="flex-1 overflow-y-auto p-0.5 sm:p-0.5"> {/* Reduced padding */}
           {children}
         </main>
