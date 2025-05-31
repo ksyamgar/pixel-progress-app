@@ -6,8 +6,20 @@ import { Button } from "@/components/ui/button";
 import { GoalCard } from "@/components/goals/goal-card";
 import { GoalForm } from "@/components/goals/goal-form";
 import type { Task, SubTask } from "@/lib/types";
-import { PlusCircle, LayoutGrid, List } from "lucide-react";
+import { PlusCircle, LayoutGrid, List, RotateCcw } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const initialTasks: Task[] = [
   { id: "g1", title: "Master Tailwind CSS", description: "Complete advanced Tailwind course and build 3 projects.", xp: 200, isCompleted: false, subTasks: [{id: "g1s1", title: "Finish course videos", xp: 50, isCompleted: true}, {id: "g1s2", title: "Project 1", xp: 50, isCompleted: false}], createdAt: "2024-07-28T10:00:00.000Z", category: "study", dueDate: "2024-08-30", timeAllocation: 1200 },
@@ -22,6 +34,7 @@ export default function GoalsPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [userXP, setUserXP] = useState(1250); // Placeholder
+  const { toast } = useToast();
 
   const handleOpenForm = (task?: Task) => {
     setEditingTask(task || null);
@@ -97,20 +110,54 @@ export default function GoalsPage() {
     }
   };
 
+  const handleClearProgress = () => {
+    setTasks([]);
+    setUserXP(0);
+    toast({
+      title: "Progress Reset",
+      description: "All your quests and XP have been cleared.",
+      className: "glassmorphic font-mono border-accent text-foreground text-sm",
+    });
+  };
+
 
   return (
     <div className="space-y-4 font-mono">
       <GlassCard className="p-4">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
           <h1 className="text-2xl font-pixel text-primary">My Quests & Goals</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             <Button variant={viewMode === 'grid' ? "default" : "outline"} size="icon" onClick={() => setViewMode('grid')} className={`h-9 w-9 ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/20'}`}>
               <LayoutGrid className="h-4 w-4" />
             </Button>
             <Button variant={viewMode === 'list' ? "default" : "outline"} size="icon" onClick={() => setViewMode('list')} className={`h-9 w-9 ${viewMode === 'list' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/20'}`}>
               <List className="h-4 w-4" />
             </Button>
-            <Button onClick={() => handleOpenForm()} size="sm" className="bg-primary hover:bg-primary/80">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 text-xs">
+                  <RotateCcw className="mr-1.5 h-4 w-4" /> Reset Progress
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="font-mono glassmorphic">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-pixel text-destructive">Confirm Reset</AlertDialogTitle>
+                  <AlertDialogDescription className="text-xs">
+                    Are you sure you want to reset all your progress? This will delete all your quests and set your XP to 0. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="text-xs h-8">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleClearProgress}
+                    className="text-xs h-8 bg-destructive hover:bg-destructive/80"
+                  >
+                    Yes, Reset Everything
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button onClick={() => handleOpenForm()} size="sm" className="bg-primary hover:bg-primary/80 h-9 text-xs">
               <PlusCircle className="mr-1.5 h-4 w-4" /> Add New Quest
             </Button>
           </div>
