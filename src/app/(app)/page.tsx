@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { GlassCard } from "@/components/shared/glass-card";
 import type { Task } from "@/lib/types";
-import { PlusCircle, Zap, Target, ListChecks, Edit3, Trash2, Camera, Upload, XCircle, Image as ImageIcon, ChevronDown, BookOpen } from "lucide-react";
+import { PlusCircle, Zap, Target, ListChecks, Edit3, Trash2, Camera, Upload, XCircle, Image as ImageIcon, ChevronDown, BookOpen, Save } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import NextImage from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -21,10 +21,12 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const initialTasks: Task[] = [
-  { id: "qt1", title: "Review PRD for new feature", xp: 25, isCompleted: false, subTasks: [], createdAt: "2024-07-30T10:00:00.000Z", category: "work", timeAllocation: 60, notes: "Focus on AI rival customization details.", images: [] },
-  { id: "qt2", title: "Quick 15-min stretch", xp: 10, isCompleted: true, subTasks: [], createdAt: "2024-07-30T08:00:00.000Z", category: "fitness", timeAllocation: 15, images: [] },
-  { id: "qt3", title: "Brainstorm ideas for pixel art character", xp: 15, isCompleted: false, subTasks: [], createdAt: "2024-07-30T14:00:00.000Z", category: "hobby", timeAllocation: 30, images: ["https://placehold.co/100x100.png?text=Idea1", "https://placehold.co/100x100.png?text=Idea2"], notes:"Explore different color palettes." },
+  { id: "qt1", title: "Review PRD for new feature", xp: 25, isCompleted: false, subTasks: [], createdAt: "2024-07-30T10:00:00.000Z", category: "work", timeAllocation: 60, notes: "Focus on AI rival customization details. Check section 3.2.1.", images: ["https://placehold.co/100x100.png?text=PRD_Shot1", "https://placehold.co/100x100.png?text=PRD_Shot2"] },
+  { id: "qt2", title: "Quick 15-min stretch", xp: 10, isCompleted: true, subTasks: [], createdAt: "2024-07-30T08:00:00.000Z", category: "fitness", timeAllocation: 15, images: [], notes: "" },
+  { id: "qt3", title: "Brainstorm ideas for pixel art character", xp: 15, isCompleted: false, subTasks: [], createdAt: "2024-07-30T14:00:00.000Z", category: "hobby", timeAllocation: 30, images: ["https://placehold.co/100x100.png?text=Idea1", "https://placehold.co/100x100.png?text=Idea2", "https://placehold.co/100x100.png?text=Idea3"], notes:"Explore different color palettes. Try a cyberpunk theme." },
+  { id: "qt4", title: "Reply to important emails", xp: 20, isCompleted: false, subTasks: [], createdAt: "2024-07-30T09:00:00.000Z", category: "work", timeAllocation: 45, images: [], notes: "Client X, Project Y follow-up." },
 ];
+
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -32,7 +34,7 @@ export default function DashboardPage() {
   const [userXP, setUserXP] = useState(1250);
   const [rivalXP, setRivalXP] = useState(1100);
   
-  const [inspirationImages, setInspirationImages] = useState<string[]>([]);
+  const [inspirationImages, setInspirationImages] = useState<string[]>(["https://placehold.co/150x150.png?text=Art1","https://placehold.co/150x150.png?text=Art2"]);
   const [showInspirationCamera, setShowInspirationCamera] = useState(false);
   const [hasInspirationCameraPermission, setHasInspirationCameraPermission] = useState<boolean | null>(null);
   const [selectedInspirationImageForOverlay, setSelectedInspirationImageForOverlay] = useState<string | null>(null);
@@ -44,7 +46,6 @@ export default function DashboardPage() {
   const inspirationStreamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
 
-  // Quick Task Edit Dialog State
   const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editTaskFormData, setEditTaskFormData] = useState<Partial<Task>>({});
@@ -54,6 +55,12 @@ export default function DashboardPage() {
   const quickTaskCanvasRef = useRef<HTMLCanvasElement>(null);
   const quickTaskFileRef = useRef<HTMLInputElement>(null);
   const quickTaskStreamRef = useRef<MediaStream | null>(null);
+
+  // State for inline editing in accordion
+  const [editingNotesTaskId, setEditingNotesTaskId] = useState<string | null>(null);
+  const [currentInlineNotes, setCurrentInlineNotes] = useState<string>("");
+  const inlineTaskImageFileRef = useRef<HTMLInputElement>(null);
+  const [taskIdForInlineImageUpload, setTaskIdForInlineImageUpload] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -108,7 +115,6 @@ export default function DashboardPage() {
   const completedXP = tasks.filter(t => t.isCompleted).reduce((sum, task) => sum + task.xp, 0);
   const progressPercentage = totalPossibleXP > 0 ? (completedXP / totalPossibleXP) * 100 : 0;
 
-  // --- Inspiration Image Handlers ---
   const handleInspirationImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
@@ -132,7 +138,6 @@ export default function DashboardPage() {
         if (inspirationVideoRef.current) inspirationVideoRef.current.srcObject = stream;
       } else { throw new Error("getUserMedia not supported"); }
     } catch (error) {
-      console.error('Error accessing inspiration camera:', error);
       setHasInspirationCameraPermission(false);
       toast({ variant: 'destructive', title: 'Camera Access Denied', description: 'Please enable camera permissions.'});
       setShowInspirationCamera(false);
@@ -174,10 +179,9 @@ export default function DashboardPage() {
     setSelectedInspirationImageForOverlay(null);
   };
 
-  // --- Quick Task Edit/Delete Handlers ---
   const handleOpenEditTaskDialog = (task: Task) => {
     setEditingTask(task);
-    setEditTaskFormData({ ...task });
+    setEditTaskFormData({ ...task, images: [...(task.images || [])] }); // Ensure images is a new array
     setIsEditTaskDialogOpen(true);
     setShowQuickTaskCamera(false);
     setHasQuickTaskCameraPermission(null);
@@ -190,18 +194,17 @@ export default function DashboardPage() {
 
   const handleSaveEditedTask = () => {
     if (!editingTask || !editTaskFormData) return;
-    setTasks(prev => prev.map(t => t.id === editingTask.id ? { ...t, ...editTaskFormData } : t));
+    setTasks(prev => prev.map(t => t.id === editingTask.id ? { ...t, ...editTaskFormData, images: [...(editTaskFormData.images || [])] } : t).sort((a,b) => Number(a.isCompleted) - Number(b.isCompleted)));
     setIsEditTaskDialogOpen(false);
     setEditingTask(null);
-    toast({ title: "Quest Updated!", description: `"${editTaskFormData.title}" has been saved.`});
+    toast({ title: "Quest Updated!", description: `"${editTaskFormData.title}" has been saved.`, className: "glassmorphic font-mono text-xs" });
   };
 
   const handleDeleteTask = (taskId: string) => {
     setTasks(prev => prev.filter(t => t.id !== taskId));
-    toast({ title: "Quest Removed", variant: "destructive" });
+    toast({ title: "Quest Removed", variant: "destructive", className: "glassmorphic font-mono text-xs" });
   };
   
-  // --- Quick Task Image Handlers (in Dialog) ---
   const handleQuickTaskImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
@@ -225,7 +228,6 @@ export default function DashboardPage() {
         if (quickTaskVideoRef.current) quickTaskVideoRef.current.srcObject = stream;
       } else { throw new Error("getUserMedia not supported"); }
     } catch (error) {
-      console.error('Error accessing task camera:', error);
       setHasQuickTaskCameraPermission(false);
       toast({ variant: 'destructive', title: 'Camera Access Denied', description: 'Please enable camera permissions.'});
       setShowQuickTaskCamera(false);
@@ -255,6 +257,56 @@ export default function DashboardPage() {
 
   const removeQuickTaskImage = (index: number) => {
     setEditTaskFormData(prev => ({...prev, images: prev?.images?.filter((_, i) => i !== index) || [] }));
+  };
+
+  // Inline editing handlers
+  const handleEditInlineNotes = (task: Task) => {
+    setEditingNotesTaskId(task.id);
+    setCurrentInlineNotes(task.notes || "");
+  };
+
+  const handleSaveInlineNotes = () => {
+    if (!editingNotesTaskId) return;
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === editingNotesTaskId ? { ...task, notes: currentInlineNotes } : task
+      )
+    );
+    setEditingNotesTaskId(null);
+    setCurrentInlineNotes("");
+  };
+  
+  const handleCancelInlineNotesEdit = () => {
+    setEditingNotesTaskId(null);
+    setCurrentInlineNotes("");
+  };
+
+  const handleInlineNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setCurrentInlineNotes(e.target.value);
+  };
+
+  const handleInlineTaskImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0] && taskIdForInlineImageUpload) {
+      const currentTaskId = taskIdForInlineImageUpload;
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTasks(prev => prev.map(t => t.id === currentTaskId ? { ...t, images: [...(t.images || []), reader.result as string] } : t));
+      };
+      reader.readAsDataURL(file);
+      setTaskIdForInlineImageUpload(null); // Reset after use
+      if(event.target) event.target.value = ""; // Clear the file input
+    }
+  };
+
+  const removeTaskImageInline = (taskId: string, imageIndex: number) => {
+    setTasks(prev =>
+      prev.map(task =>
+        task.id === taskId
+          ? { ...task, images: task.images?.filter((_, idx) => idx !== imageIndex) || [] }
+          : task
+      )
+    );
   };
 
 
@@ -331,40 +383,122 @@ export default function DashboardPage() {
                     ) : <div className="w-5 h-5"/> }
                   </div>
                 </div>
-                <AccordionContent className="pt-1.5 mt-1 border-t border-border/30">
-                  <div className="flex gap-2">
-                    {task.images && task.images.length > 0 && (
-                      <div className="w-2/3 pr-1 border-r border-border/30">
-                        <h4 className="text-xs font-semibold text-accent mb-1">Images:</h4>
-                        <div className="grid grid-cols-3 gap-1">
-                          {task.images.map((src, idx) => (
-                            <div key={idx} className="relative aspect-square group cursor-pointer" onClick={() => openInspirationImageInOverlay(src)}>
-                              <img src={src} alt={`Task image ${idx+1}`} className="w-full h-full object-cover rounded border border-accent/20 group-hover:opacity-70 transition-opacity"/>
-                            </div>
-                          ))}
+                <AccordionContent className="pt-1.5 mt-1 border-t border-border/30 space-y-2">
+                  {((task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id) && (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {/* Images Section in Accordion */}
+                      {(task.images && task.images.length > 0 || editingNotesTaskId === task.id && task.images && task.images.length > 0) && (
+                        <div className="w-full sm:w-2/3">
+                          <h4 className="text-xs font-semibold text-accent mb-1 flex items-center"><ImageIcon className="h-3 w-3 mr-1"/>Images:</h4>
+                          <div className="grid grid-cols-3 gap-1 mb-1">
+                            {task.images.map((src, idx) => (
+                              <div key={idx} className="relative aspect-square group">
+                                <img 
+                                  src={src} 
+                                  alt={`Task image ${idx+1}`} 
+                                  className="w-full h-full object-cover rounded border border-accent/20 group-hover:opacity-70 transition-opacity cursor-pointer"
+                                  onClick={() => openInspirationImageInOverlay(src)}
+                                  />
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute top-0.5 right-0.5 h-4 w-4 p-0 opacity-50 group-hover:opacity-100 transition-opacity z-10"
+                                  onClick={() => removeTaskImageInline(task.id, idx)}
+                                >
+                                  <XCircle className="h-2.5 w-2.5" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                           <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-6 text-xs mt-1"
+                            onClick={() => {
+                              setTaskIdForInlineImageUpload(task.id);
+                              inlineTaskImageFileRef.current?.click();
+                            }}
+                          >
+                            <Upload className="h-3 w-3 mr-1" /> Add Image
+                          </Button>
                         </div>
-                      </div>
-                    )}
-                    {(task.images && task.images.length > 0 && task.notes && task.notes.trim() !== "") ? (
-                       <div className="w-1/3">
-                        <h4 className="text-xs font-semibold text-accent mb-1 flex items-center"><BookOpen className="h-3 w-3 mr-1"/>Notes:</h4>
-                        <ScrollArea className="h-20 text-xs text-muted-foreground whitespace-pre-wrap bg-black/10 p-1 rounded border border-border/20">
-                            {task.notes}
-                        </ScrollArea>
-                      </div>
-                    ) : (task.notes && task.notes.trim() !== "") && (
-                       <div className="w-full">
-                        <h4 className="text-xs font-semibold text-accent mb-1 flex items-center"><BookOpen className="h-3 w-3 mr-1"/>Notes:</h4>
-                        <ScrollArea className="h-20 text-xs text-muted-foreground whitespace-pre-wrap bg-black/10 p-1 rounded border border-border/20">
-                            {task.notes}
-                        </ScrollArea>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                       {/* Fallback for add image if no images initially but notes are present or being edited */}
+                        {!(task.images && task.images.length > 0) && (editingNotesTaskId === task.id || (task.notes && task.notes.trim() !== "")) && (
+                           <div className="w-full sm:w-2/3">
+                             <h4 className="text-xs font-semibold text-accent mb-1 flex items-center"><ImageIcon className="h-3 w-3 mr-1"/>Images:</h4>
+                              <p className="text-xs text-muted-foreground mb-1">No images yet.</p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full h-6 text-xs mt-1"
+                                onClick={() => {
+                                  setTaskIdForInlineImageUpload(task.id);
+                                  inlineTaskImageFileRef.current?.click();
+                                }}
+                              >
+                                <Upload className="h-3 w-3 mr-1" /> Add Image
+                              </Button>
+                           </div>
+                        )}
+
+
+                      {/* Notes Section in Accordion */}
+                      {(task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id ? (
+                        <div className={`w-full ${task.images && task.images.length > 0 ? 'sm:w-1/3' : ''}`}>
+                          <h4 className="text-xs font-semibold text-accent mb-1 flex items-center"><BookOpen className="h-3 w-3 mr-1"/>Notes:</h4>
+                          {editingNotesTaskId === task.id ? (
+                            <div className="space-y-1">
+                              <Textarea
+                                value={currentInlineNotes}
+                                onChange={handleInlineNotesChange}
+                                className="text-xs bg-background/70 border-primary/30 h-20"
+                                rows={3}
+                              />
+                              <div className="flex gap-1">
+                                <Button onClick={handleSaveInlineNotes} size="sm" className="h-6 text-xs flex-1 bg-primary hover:bg-primary/80">
+                                  <Save className="h-2.5 w-2.5 mr-1"/>Save
+                                </Button>
+                                <Button variant="outline" onClick={handleCancelInlineNotesEdit} size="sm" className="h-6 text-xs flex-1">Cancel</Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <ScrollArea className="h-20 text-xs text-muted-foreground whitespace-pre-wrap bg-black/10 p-1 rounded border border-border/20">
+                                {task.notes}
+                              </ScrollArea>
+                              <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-6 text-xs mt-1">
+                                <Edit3 className="h-2.5 w-2.5 mr-1"/> Edit Notes
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      ) : (task.images && task.images.length > 0) && ( // Case: images exist, but no notes, still provide option to add notes
+                         <div className="w-full sm:w-1/3">
+                            <h4 className="text-xs font-semibold text-accent mb-1 flex items-center"><BookOpen className="h-3 w-3 mr-1"/>Notes:</h4>
+                             <p className="text-xs text-muted-foreground mb-1">No notes yet.</p>
+                            <Button variant="outline" size="sm" onClick={() => handleEditInlineNotes(task)} className="w-full h-6 text-xs mt-1">
+                                <Edit3 className="h-2.5 w-2.5 mr-1"/> Add Notes
+                            </Button>
+                         </div>
+                      )
+                      }
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
+          <Input 
+            type="file" 
+            ref={inlineTaskImageFileRef} 
+            onChange={handleInlineTaskImageUpload} 
+            accept="image/*" 
+            className="hidden" 
+            multiple={false} // Allow one at a time for inline simplicity
+          />
         </CardContent>
       </GlassCard>
       
@@ -383,7 +517,7 @@ export default function DashboardPage() {
             <GlassCard className="p-1.5">
                <h3 className="text-xs font-semibold text-accent mb-0.5 flex items-center"><Zap className="mr-1 h-3 w-3 text-red-500" />AI Rival XP</h3>
                <p className="text-lg font-bold text-primary-foreground">{rivalXP}</p>
-               <NextImage data-ai-hint="robot enemy" src="https://source.unsplash.com/random/180x80/?robot,enemy" alt="AI Rival Visual" width={180} height={80} className="mt-0.5 rounded-sm opacity-70 mx-auto max-h-[48px] object-cover" />
+               <NextImage data-ai-hint="robot enemy" src="https://source.unsplash.com/random/200x100/?robot,enemy" alt="AI Rival Visual" width={200} height={100} className="mt-0.5 rounded-sm opacity-70 mx-auto max-h-[48px] object-cover" />
             </GlassCard>
           </div>
         </CardContent>
@@ -434,6 +568,7 @@ export default function DashboardPage() {
                         <AlertDescription className="text-xs">Enable camera permissions.</AlertDescription>
                     </Alert>
                 )}
+                 {hasInspirationCameraPermission === null && <p className="text-xs text-muted-foreground text-center">Requesting camera...</p>}
                 <div className="flex gap-1.5">
                   <Button onClick={captureInspirationImage} size="sm" className="flex-1 h-7 text-xs" disabled={hasInspirationCameraPermission !== true}>
                     <Camera className="mr-1 h-3 w-3" /> Capture
@@ -461,7 +596,6 @@ export default function DashboardPage() {
         </CardContent>
       </GlassCard>
 
-      {/* Edit Quick Task Dialog */}
       {editingTask && editTaskFormData && (
         <Dialog open={isEditTaskDialogOpen} onOpenChange={(isOpen) => {
             setIsEditTaskDialogOpen(isOpen);
@@ -494,11 +628,10 @@ export default function DashboardPage() {
                 <Label htmlFor="edit-task-notes">Notes</Label>
                 <Textarea id="edit-task-notes" name="notes" value={editTaskFormData.notes || ''} onChange={handleEditTaskFormChange} className="text-xs bg-card/50 border-primary/30" rows={3}/>
               </div>
-              {/* Task Images Section in Dialog */}
               <div className="space-y-1">
-                <Label className="flex items-center"><ImageIcon className="h-3 w-3 mr-1"/>Images</Label>
+                <Label className="flex items-center"><ImageIcon className="h-3 w-3 mr-1"/>Images ({editTaskFormData.images?.length || 0})</Label>
                 {editTaskFormData.images && editTaskFormData.images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-1 mb-1.5 p-1 bg-black/10 rounded border border-border/20">
+                  <div className="grid grid-cols-3 gap-1 mb-1.5 p-1 bg-black/10 rounded border border-border/20 max-h-32 overflow-y-auto">
                     {editTaskFormData.images.map((src, index) => (
                       <div key={index} className="relative group aspect-square">
                         <img src={src} alt={`Task image ${index + 1}`} className="w-full h-full object-cover rounded"/>
@@ -512,12 +645,12 @@ export default function DashboardPage() {
                  {showQuickTaskCamera && (
                   <div className="space-y-1">
                     <video ref={quickTaskVideoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
-                    {hasQuickTaskCameraPermission === false && (
+                     {hasQuickTaskCameraPermission === false && (
                         <Alert variant="destructive" className="text-xs py-1 px-1.5">
-                            <Camera className="h-3 w-3" />
-                            <AlertTitle className="text-xs font-semibold">Camera Denied</AlertTitle>
+                            <Camera className="h-3 w-3" /> <AlertTitle className="text-xs font-semibold">Camera Denied</AlertTitle>
                         </Alert>
                     )}
+                    {hasQuickTaskCameraPermission === null && <p className="text-xs text-muted-foreground text-center">Requesting camera...</p>}
                     <div className="flex gap-1.5">
                       <Button type="button" onClick={captureQuickTaskImage} size="sm" className="flex-1 h-6 text-xs" disabled={hasQuickTaskCameraPermission !== true}>
                         <Camera className="mr-1 h-3 w-3" /> Capture
@@ -551,8 +684,6 @@ export default function DashboardPage() {
         </Dialog>
       )}
 
-
-      {/* Inspiration Image Overlay */}
       {isInspirationOverlayOpen && selectedInspirationImageForOverlay && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4"
@@ -578,3 +709,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
