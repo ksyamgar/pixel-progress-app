@@ -316,7 +316,7 @@ export default function DashboardPage() {
   const handleInlineTaskImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0] && taskIdForInlineImageUpload) {
       const currentTaskId = taskIdForInlineImageUpload;
-      const file = event.target.files[0]; // Only taking the first file for now, can be extended for multiple
+      const file = event.target.files[0]; 
       const reader = new FileReader();
       reader.onloadend = () => {
         setTasks(prev => prev.map(t => t.id === currentTaskId ? { 
@@ -633,7 +633,7 @@ export default function DashboardPage() {
             <canvas ref={inspirationCanvasRef} className="hidden"></canvas>
 
             {!showInspirationCamera && (
-              <div className="flex gap-1">
+              <div className="flex flex-col sm:flex-row gap-1">
                 <Button onClick={() => inspirationFileRef.current?.click()} size="sm" variant="outline" className="flex-1 h-6 text-xs">
                   <Upload className="mr-0.5 h-2.5 w-2.5" /> Upload Image
                 </Button>
