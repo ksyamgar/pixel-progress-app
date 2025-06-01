@@ -23,11 +23,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 
 const initialTasks: Task[] = [
-  { id: "qt1", title: "Review PRD for new feature", xp: 25, isCompleted: false, 
+  { id: "qt1", title: "Review PRD for new feature", xp: 25, isCompleted: false,
     subTasks: [
       { id: "qt1s1", title: "Read section 1-2", xp: 10, isCompleted: false },
       { id: "qt1s2", title: "Check competitor analysis", xp: 5, isCompleted: false },
-    ], 
+    ],
     createdAt: "2024-07-30T10:00:00.000Z", category: "work", timeAllocation: 60, notes: "Focus on AI rival customization details. Check section 3.2.1. This note is a bit longer to test the scrolling and layout of the notes area, ensuring it handles multiline content effectively.", images: [], dataAiHints: [] },
   { id: "qt2", title: "Quick 15-min stretch", xp: 10, isCompleted: true, subTasks: [], createdAt: "2024-07-30T08:00:00.000Z", category: "fitness", timeAllocation: 15, images: [], dataAiHints: [], notes: "" },
   { id: "qt3", title: "Brainstorm ideas for pixel art character", xp: 15, isCompleted: false, subTasks: [], createdAt: "2024-07-30T14:00:00.000Z", category: "hobby", timeAllocation: 30, images: [], dataAiHints: [], notes:"Explore different color palettes. Try a cyberpunk theme."},
@@ -43,15 +43,15 @@ const LOCALSTORAGE_RIVAL_XP_KEY_PREFIX = 'pixelProgressRivalXP_';
 interface DashboardPageProps {
   userXP?: number;
   setUserXP?: Dispatch<SetStateAction<number>>;
-  userName?: string; 
+  userName?: string;
 }
 
 export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: DashboardPageProps) {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [rivalXP, setRivalXP] = useState(1100);
-  
+
   const [inspirationBoards, setInspirationBoards] = useState<InspirationBoard[]>([]);
   const [newBoardTitle, setNewBoardTitle] = useState("");
   const [showInspirationCameraForBoardId, setShowInspirationCameraForBoardId] = useState<string | null>(null);
@@ -99,17 +99,17 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
           if (Array.isArray(parsedTasks)) {
             setTasks(parsedTasks);
           } else {
-            console.warn("Dashboard: Malformed tasks in localStorage. Resetting to defaults.");
+            console.warn("Dashboard: Malformed tasks in localStorage (not an array). Resetting to defaults for key:", tasksKey);
             setTasks(initialTasks);
-            localStorage.removeItem(tasksKey); 
+            localStorage.removeItem(tasksKey);
           }
         } catch (error) {
-          console.error("Dashboard: Failed to parse tasks from localStorage:", error);
+          console.error("Dashboard: Failed to parse tasks from localStorage for key:", tasksKey, error);
           setTasks(initialTasks);
           localStorage.removeItem(tasksKey);
         }
       } else {
-        setTasks(initialTasks); // No tasks for this user
+        setTasks(initialTasks); // No tasks for this user with this key
       }
 
       // Load Inspiration Boards
@@ -121,20 +121,27 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
           if (Array.isArray(parsedBoards)) {
             setInspirationBoards(parsedBoards);
           } else {
+            console.warn("Dashboard: Malformed inspiration boards in localStorage (not an array). Resetting for key:", boardsKey);
             setInspirationBoards([]);
+            localStorage.removeItem(boardsKey);
           }
-        } catch {
+        } catch (error) {
+          console.error("Dashboard: Failed to parse inspiration boards from localStorage for key:", boardsKey, error);
           setInspirationBoards([]);
+          localStorage.removeItem(boardsKey);
         }
       } else {
-        setInspirationBoards([]);
+        setInspirationBoards([]); // No boards for this user
       }
 
       // Load Rival Image
       const rivalImageKey = `${LOCALSTORAGE_RIVAL_IMAGE_KEY_PREFIX}${user.uid}`;
       const storedRivalImage = localStorage.getItem(rivalImageKey);
-      if (storedRivalImage) setRivalImageSrc(storedRivalImage);
-      else setRivalImageSrc("https://source.unsplash.com/random/200x100/?robot,enemy&sig=105");
+      if (storedRivalImage) {
+        setRivalImageSrc(storedRivalImage);
+      } else {
+        setRivalImageSrc("https://source.unsplash.com/random/200x100/?robot,enemy&sig=105");
+      }
 
 
       // Load Rival XP
@@ -143,11 +150,13 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
       if (storedRivalXP) {
         try {
           setRivalXP(JSON.parse(storedRivalXP));
-        } catch {
+        } catch (error){
+          console.warn("Dashboard: Failed to parse rival XP from localStorage for key:", rivalXpKey, error);
           setRivalXP(1100);
+          localStorage.removeItem(rivalXpKey);
         }
       } else {
-        setRivalXP(1100);
+        setRivalXP(1100); // No rival XP for this user
       }
 
     } else { // No user, reset all page-specific states to defaults
@@ -156,35 +165,35 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         setRivalImageSrc("https://source.unsplash.com/random/200x100/?robot,enemy&sig=105");
         setRivalXP(1100);
     }
-  }, [user]);
+  }, [user]); // This effect should only run when the user object itself changes.
 
   // Persist tasks to localStorage
   useEffect(() => {
     if (user && user.uid) {
       localStorage.setItem(`${LOCALSTORAGE_DASHBOARD_TASKS_KEY_PREFIX}${user.uid}`, JSON.stringify(tasks));
     }
-  }, [tasks, user]);
+  }, [tasks, user?.uid]);
 
   // Persist inspiration boards
   useEffect(() => {
     if (user && user.uid) {
       localStorage.setItem(`${LOCALSTORAGE_INSPIRATION_BOARDS_KEY_PREFIX}${user.uid}`, JSON.stringify(inspirationBoards));
     }
-  }, [inspirationBoards, user]);
+  }, [inspirationBoards, user?.uid]);
 
   // Persist rival image
   useEffect(() => {
     if (user && user.uid) {
       localStorage.setItem(`${LOCALSTORAGE_RIVAL_IMAGE_KEY_PREFIX}${user.uid}`, rivalImageSrc);
     }
-  }, [rivalImageSrc, user]);
-  
+  }, [rivalImageSrc, user?.uid]);
+
   // Persist rival XP
   useEffect(() => {
     if (user && user.uid) {
       localStorage.setItem(`${LOCALSTORAGE_RIVAL_XP_KEY_PREFIX}${user.uid}`, JSON.stringify(rivalXP));
     }
-  }, [rivalXP, user]);
+  }, [rivalXP, user?.uid]);
 
 
   useEffect(() => {
@@ -223,9 +232,9 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         if (task.id === taskId) {
           let taskXPChange = 0;
           const originalTaskCompleted = task.isCompleted;
-          let updatedSubTasks = [...task.subTasks]; 
+          let updatedSubTasks = [...task.subTasks];
 
-          if (subTaskId) { 
+          if (subTaskId) {
             updatedSubTasks = task.subTasks.map(st => {
               if (st.id === subTaskId) {
                 const originalSubTaskCompleted = st.isCompleted;
@@ -244,25 +253,25 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
             }
 
             if (newOverallCompletedStatus && !originalTaskCompleted && task.subTasks.length > 0) {
-              taskXPChange += task.xp; 
+              taskXPChange += task.xp;
             } else if (!newOverallCompletedStatus && originalTaskCompleted && task.subTasks.length > 0) {
-              taskXPChange -= task.xp; 
+              taskXPChange -= task.xp;
             }
-            
+
             if (taskXPChange !== 0 && setUserXP) {
               setUserXP(prevXP => prevXP + taskXPChange);
             }
             return { ...task, subTasks: updatedSubTasks, isCompleted: newOverallCompletedStatus };
 
-          } else { 
+          } else {
             const newCompletedStatus = !task.isCompleted;
             if (newCompletedStatus && !originalTaskCompleted) taskXPChange += task.xp;
             if (!newCompletedStatus && originalTaskCompleted) taskXPChange -= task.xp;
-            
+
             updatedSubTasks = newCompletedStatus ? task.subTasks.map(st => {
-                if(!st.isCompleted) taskXPChange += st.xp; 
+                if(!st.isCompleted) taskXPChange += st.xp;
                 return {...st, isCompleted: true};
-            }) : task.subTasks; 
+            }) : task.subTasks;
 
             if (taskXPChange !== 0 && setUserXP) {
                 setUserXP(prevXP => prevXP + taskXPChange);
@@ -288,11 +297,11 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
           xp: currentSubtaskInput.xp || 0,
           isCompleted: false,
         };
-        return { ...task, subTasks: [...task.subTasks, newSub], isCompleted: false }; 
+        return { ...task, subTasks: [...task.subTasks, newSub], isCompleted: false };
       }
       return task;
     }));
-    setNewSubtaskData(prev => ({ ...prev, [taskId]: { title: "", xp: 5 } })); 
+    setNewSubtaskData(prev => ({ ...prev, [taskId]: { title: "", xp: 5 } }));
   };
 
   const handleDeleteSubtask = (taskId: string, subTaskId: string) => {
@@ -301,13 +310,13 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         const subtaskToDelete = task.subTasks.find(st => st.id === subTaskId);
         let xpChange = 0;
         if (subtaskToDelete && subtaskToDelete.isCompleted) {
-          xpChange -= subtaskToDelete.xp; 
+          xpChange -= subtaskToDelete.xp;
         }
-        
+
         const updatedSubTasks = task.subTasks.filter(st => st.id !== subTaskId);
         const wasParentCompleted = task.isCompleted;
-        const allRemainingSubtasksCompleted = updatedSubTasks.length > 0 ? updatedSubTasks.every(st => st.isCompleted) : true; 
-        
+        const allRemainingSubtasksCompleted = updatedSubTasks.length > 0 ? updatedSubTasks.every(st => st.isCompleted) : true;
+
         let newParentCompletedStatus = wasParentCompleted;
         if (updatedSubTasks.length > 0) {
             newParentCompletedStatus = allRemainingSubtasksCompleted;
@@ -315,10 +324,10 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
             newParentCompletedStatus = allRemainingSubtasksCompleted ? task.isCompleted : false;
         }
 
-        if (newParentCompletedStatus && !wasParentCompleted && updatedSubTasks.length > 0) { 
+        if (newParentCompletedStatus && !wasParentCompleted && updatedSubTasks.length > 0) {
           xpChange += task.xp;
-        } else if (!newParentCompletedStatus && wasParentCompleted && updatedSubTasks.length > 0) { 
-           if(task.subTasks.every(st => st.isCompleted)){ 
+        } else if (!newParentCompletedStatus && wasParentCompleted && updatedSubTasks.length > 0) {
+           if(task.subTasks.every(st => st.isCompleted)){
              xpChange -= task.xp;
            }
         } else if (updatedSubTasks.length === 0 && wasParentCompleted && !task.subTasks.every(st => st.isCompleted)) {
@@ -378,7 +387,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         const reader = new FileReader();
         reader.onloadend = () => {
           const newImage: InspirationImage = {
-            id: String(Date.now()) + Math.random(), 
+            id: String(Date.now()) + Math.random(),
             src: reader.result as string,
             dataAiHint: "custom upload",
           };
@@ -390,9 +399,9 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         };
         reader.readAsDataURL(file);
       });
-      if(event.target) event.target.value = ""; 
+      if(event.target) event.target.value = "";
     }
-    setActiveBoardForFileUpload(null); 
+    setActiveBoardForFileUpload(null);
   };
 
   const triggerInspirationFileUpload = (boardId: string) => {
@@ -509,7 +518,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     setTasks(prev => prev.filter(t => t.id !== taskId));
     toast({ title: "Quest Removed", variant: "destructive", className: "glassmorphic font-mono text-xs" });
   };
-  
+
   const handleQuickTaskImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
        for (let i = 0; i < event.target.files.length; i++) {
@@ -517,7 +526,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         const reader = new FileReader();
         reader.onloadend = () => {
           setEditTaskFormData(prev => ({
-              ...prev, 
+              ...prev,
               images: [...(prev?.images || []), reader.result as string],
               dataAiHints: [...(prev?.dataAiHints || []), "custom upload"]
           }));
@@ -554,7 +563,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
       canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       const dataUri = canvas.toDataURL('image/png');
       setEditTaskFormData(prev => ({
-        ...prev, 
+        ...prev,
         images: [...(prev?.images || []), dataUri],
         dataAiHints: [...(prev?.dataAiHints || []), "camera capture"]
       }));
@@ -572,7 +581,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
 
   const removeQuickTaskImage = (index: number) => {
     setEditTaskFormData(prev => ({
-        ...prev, 
+        ...prev,
         images: prev?.images?.filter((_, i) => i !== index) || [],
         dataAiHints: prev?.dataAiHints?.filter((_,i) => i !== index) || [],
     }));
@@ -593,7 +602,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     setEditingNotesTaskId(null);
     setCurrentInlineNotes("");
   };
-  
+
   const handleCancelInlineNotesEdit = () => {
     setEditingNotesTaskId(null);
     setCurrentInlineNotes("");
@@ -606,18 +615,18 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
   const handleInlineTaskImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0] && taskIdForInlineImageUpload) {
       const currentTaskId = taskIdForInlineImageUpload;
-      const file = event.target.files[0]; 
+      const file = event.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        setTasks(prev => prev.map(t => t.id === currentTaskId ? { 
-            ...t, 
+        setTasks(prev => prev.map(t => t.id === currentTaskId ? {
+            ...t,
             images: [...(t.images || []), reader.result as string],
-            dataAiHints: [...(t.dataAiHints || []), "custom upload"] 
+            dataAiHints: [...(t.dataAiHints || []), "custom upload"]
         } : t));
       };
       reader.readAsDataURL(file);
-      setTaskIdForInlineImageUpload(null); 
-      if(event.target) event.target.value = ""; 
+      setTaskIdForInlineImageUpload(null);
+      if(event.target) event.target.value = "";
     }
   };
 
@@ -625,8 +634,8 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     setTasks(prev =>
       prev.map(task =>
         task.id === taskId
-          ? { 
-              ...task, 
+          ? {
+              ...task,
               images: task.images?.filter((_, idx) => idx !== imageIndex) || [],
               dataAiHints: task.dataAiHints?.filter((_, idx) => idx !== imageIndex) || [],
             }
@@ -724,7 +733,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                   </div>
                 </div>
                 <AccordionContent className="pt-2.5 mt-2.5 border-t border-border/30">
-                 <div className="space-y-3"> 
+                 <div className="space-y-3">
                     {((task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id) && (
                       <div className="flex flex-col sm:flex-row gap-2.5">
                         <div className={`flex flex-col ${task.notes && task.notes.trim() !== "" || editingNotesTaskId === task.id ? 'sm:w-2/3' : 'w-full'}`}>
@@ -733,10 +742,10 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
                               {task.images.map((src, idx) => (
                                 <div key={idx} className="relative aspect-square group">
-                                  <img 
-                                    src={src} 
+                                  <img
+                                    src={src}
                                     data-ai-hint={task.dataAiHints?.[idx] || "task image"}
-                                    alt={`Task image ${idx+1}`} 
+                                    alt={`Task image ${idx+1}`}
                                     className="w-full h-full object-cover rounded-md border border-accent/20 group-hover:opacity-70 transition-opacity cursor-pointer"
                                     onClick={() => openInspirationImageInOverlay(src)}
                                     />
@@ -766,7 +775,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                             <Upload className="h-4 w-4 mr-2" /> Add Image
                           </Button>
                         </div>
-                        
+
                         {(task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id ? (
                           <div className={`flex flex-col ${task.images && task.images.length > 0 ? 'sm:w-1/3' : 'w-full mt-2.5 sm:mt-0'} flex-grow`}>
                             <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center shrink-0"><BookOpen className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Notes:</h4>
@@ -795,7 +804,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                               </div>
                             )}
                           </div>
-                        ) : (task.images && task.images.length > 0) ? ( 
+                        ) : (task.images && task.images.length > 0) ? (
                           <div className="flex flex-col sm:w-1/3 flex-grow">
                               <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center shrink-0"><BookOpen className="h-4 w-4 mr-1.5"/>Notes:</h4>
                               <p className="text-sm md:text-base text-muted-foreground mb-2 flex-grow">No notes yet.</p>
@@ -803,7 +812,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                                   <Edit3 className="h-3.5 w-3.5 mr-1.5"/> Add Notes
                               </Button>
                           </div>
-                        ) : null 
+                        ) : null
                         }
                       </div>
                     )}
@@ -865,17 +874,17 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
               </AccordionItem>
             ))}
           </Accordion>
-          <Input 
-            type="file" 
-            ref={inlineTaskImageFileRef} 
-            onChange={handleInlineTaskImageUpload} 
-            accept="image/*" 
-            className="hidden" 
+          <Input
+            type="file"
+            ref={inlineTaskImageFileRef}
+            onChange={handleInlineTaskImageUpload}
+            accept="image/*"
+            className="hidden"
             multiple={false}
           />
         </CardContent>
       </GlassCard>
-      
+
       <GlassCard className="font-pixel">
         <CardHeader className="p-4 md:p-5">
           <CardTitle className="text-lg md:text-xl text-primary flex items-center"><Target className="mr-2.5 h-5 w-5 md:h-6 md:w-6" /> Daily Mission Control</CardTitle>
@@ -892,37 +901,37 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                <h3 className="text-lg font-semibold text-accent mb-2 flex items-center"><Zap className="mr-2 h-5 w-5 text-red-500" />AI Rival XP</h3>
                <p className="text-xl font-bold text-primary-foreground">{rivalXP}</p>
                 <div className="relative group cursor-pointer mt-2" onClick={handleRivalImageClick}>
-                  <NextImage 
-                    src={rivalImageSrc} 
-                    data-ai-hint="robot enemy" 
-                    alt="AI Rival Visual" 
-                    width={200} 
-                    height={100} 
-                    className="rounded-sm opacity-70 mx-auto max-h-[50px] object-cover group-hover:opacity-50 transition-opacity" 
+                  <NextImage
+                    src={rivalImageSrc}
+                    data-ai-hint="robot enemy"
+                    alt="AI Rival Visual"
+                    width={200}
+                    height={100}
+                    className="rounded-sm opacity-70 mx-auto max-h-[50px] object-cover group-hover:opacity-50 transition-opacity"
                   />
                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 rounded-sm transition-opacity max-h-[50px] mt-0">
                      <UploadCloud className="h-5 w-5 text-white/70" />
                    </div>
                 </div>
-                <input 
-                  type="file" 
-                  ref={rivalImageInputRef} 
-                  onChange={handleRivalImageChange} 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  ref={rivalImageInputRef}
+                  onChange={handleRivalImageChange}
+                  accept="image/*"
+                  className="hidden"
                 />
             </GlassCard>
           </div>
         </CardContent>
       </GlassCard>
-      
+
       <GlassCard>
         <CardHeader className="p-4 md:p-5">
            <h3 className="font-pixel text-lg md:text-xl text-primary flex items-center"><Brain className="mr-2.5 h-5 w-5 md:h-6 md:w-6" />Work Inspirations</h3>
         </CardHeader>
         <CardContent className="p-4 md:p-5 pt-0">
           <div className="flex gap-2 mb-4">
-            <Input 
+            <Input
               type="text"
               placeholder="New Inspiration Board Title..."
               value={newBoardTitle}
@@ -972,9 +981,9 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-3">
                   {board.images.map((img) => (
                     <div key={img.id} className="relative group aspect-square">
-                      <img 
-                        src={img.src} 
-                        alt={`Inspiration for ${board.title}`} 
+                      <img
+                        src={img.src}
+                        alt={`Inspiration for ${board.title}`}
                         data-ai-hint={img.dataAiHint}
                         className="w-full h-full object-cover rounded-md cursor-pointer border border-accent/30 hover:opacity-80 transition-opacity"
                         onClick={() => openInspirationImageInOverlay(img.src)}
@@ -991,7 +1000,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                   ))}
                 </div>
               )}
-              
+
               {(board.images.length === 0 && showInspirationCameraForBoardId !== board.id) && (
                  <p className="text-center text-muted-foreground py-3 text-xs">This board is empty. Add some images!</p>
               )}
@@ -1124,14 +1133,14 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
       )}
 
       {isInspirationOverlayOpen && selectedInspirationImageForOverlay && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-1 sm:p-1.5"
-          onClick={closeInspirationImageOverlay} 
+          onClick={closeInspirationImageOverlay}
         >
           <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={selectedInspirationImageForOverlay} 
-              alt="Inspiration Overlay" 
+            <img
+              src={selectedInspirationImageForOverlay}
+              alt="Inspiration Overlay"
               className="block max-w-full max-h-[98vh] object-contain rounded-md shadow-xl"
             />
             <Button
@@ -1148,5 +1157,3 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     </div>
   );
 }
-
-    
