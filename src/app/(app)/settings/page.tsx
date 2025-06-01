@@ -3,7 +3,7 @@
 
 import type { Dispatch, SetStateAction } from 'react';
 import { RivalConfigForm } from "@/components/rival/rival-config-form";
-import { UserProfileSettingsForm } from "@/components/settings/user-profile-settings-form"; // New import
+import { UserProfileSettingsForm } from "@/components/settings/user-profile-settings-form";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,16 +17,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Settings, Bot, RotateCcw, AlertTriangle, User } from "lucide-react"; // Added User
+import { Settings, Bot, RotateCcw, AlertTriangle, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 
 interface SettingsPageProps {
   setUserXP?: Dispatch<SetStateAction<number>>;
-  userName?: string; // From AppLayout, for display
-  userAvatar?: string; // From AppLayout
-  setUserAvatar?: Dispatch<SetStateAction<string>>; // Setter from AppLayout
-  setAppUserName?: Dispatch<SetStateAction<string>>; // Setter from AppLayout for name
+  userName?: string; 
+  userAvatar?: string; 
+  setUserAvatar?: Dispatch<SetStateAction<string>>; 
+  setAppUserName?: Dispatch<SetStateAction<string>>; 
 }
 
 export default function SettingsPage({ 
@@ -61,23 +61,24 @@ export default function SettingsPage({
         </p>
       </GlassCard>
 
-      {/* User Profile Settings Section */}
-      <UserProfileSettingsForm
-        userAvatarState={userAvatar}
-        setUserAvatarState={setUserAvatar}
-        currentUserNameState={userName}
-        setCurrentUserNameStateGlobal={setAppUserName}
-      />
-      
-      <Separator className="my-6 bg-border/30" />
-
-      <GlassCard className="p-4">
-        <h2 className="text-xl font-pixel text-accent mb-3 flex items-center">
-          <Bot className="mr-2 h-6 w-6" />
-          AI Rival Configuration
-        </h2>
-        <RivalConfigForm />
-      </GlassCard>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* User Profile Settings Section */}
+        <UserProfileSettingsForm
+          userAvatarState={userAvatar}
+          setUserAvatarState={setUserAvatar}
+          currentUserNameState={userName}
+          setCurrentUserNameStateGlobal={setAppUserName}
+        />
+        
+        {/* AI Rival Configuration Section */}
+        <GlassCard className="p-4 h-fit"> {/* Added h-fit to ensure this card doesn't stretch unnecessarily */}
+          <h2 className="text-xl font-pixel text-accent mb-3 flex items-center">
+            <Bot className="mr-2 h-6 w-6" />
+            AI Rival Configuration
+          </h2>
+          <RivalConfigForm />
+        </GlassCard>
+      </div>
       
       <Separator className="my-6 bg-border/30" />
 
