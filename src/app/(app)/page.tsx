@@ -20,7 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/contexts/AuthContext';
 
 const initialTasks: Task[] = [
   { id: "qt1", title: "Review PRD for new feature", xp: 25, isCompleted: false, 
@@ -47,7 +47,7 @@ interface DashboardPageProps {
 }
 
 export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: DashboardPageProps) {
-  const { user } = useAuth(); // Get user for localStorage keying
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [rivalXP, setRivalXP] = useState(1100);
@@ -87,26 +87,70 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
 
   const [newSubtaskData, setNewSubtaskData] = useState<{ [taskId: string]: { title: string; xp: number } }>({});
 
-  // Load tasks, boards, rival data from localStorage on mount if user exists
+  // Load data from localStorage on user change
   useEffect(() => {
     if (user && user.uid) {
-      const storedTasks = localStorage.getItem(`${LOCALSTORAGE_DASHBOARD_TASKS_KEY_PREFIX}${user.uid}`);
+      // Load Tasks
+      const tasksKey = `${LOCALSTORAGE_DASHBOARD_TASKS_KEY_PREFIX}${user.uid}`;
+      const storedTasks = localStorage.getItem(tasksKey);
       if (storedTasks) {
-        setTasks(JSON.parse(storedTasks));
+        try {
+          const parsedTasks = JSON.parse(storedTasks);
+          if (Array.isArray(parsedTasks)) {
+            setTasks(parsedTasks);
+          } else {
+            console.warn("Dashboard: Malformed tasks in localStorage. Resetting to defaults.");
+            setTasks(initialTasks);
+            localStorage.removeItem(tasksKey); 
+          }
+        } catch (error) {
+          console.error("Dashboard: Failed to parse tasks from localStorage:", error);
+          setTasks(initialTasks);
+          localStorage.removeItem(tasksKey);
+        }
       } else {
-        setTasks(initialTasks); // Fallback to initial if nothing stored for this user
+        setTasks(initialTasks); // No tasks for this user
       }
 
-      const storedBoards = localStorage.getItem(`${LOCALSTORAGE_INSPIRATION_BOARDS_KEY_PREFIX}${user.uid}`);
-      if (storedBoards) setInspirationBoards(JSON.parse(storedBoards));
+      // Load Inspiration Boards
+      const boardsKey = `${LOCALSTORAGE_INSPIRATION_BOARDS_KEY_PREFIX}${user.uid}`;
+      const storedBoards = localStorage.getItem(boardsKey);
+      if (storedBoards) {
+        try {
+          const parsedBoards = JSON.parse(storedBoards);
+          if (Array.isArray(parsedBoards)) {
+            setInspirationBoards(parsedBoards);
+          } else {
+            setInspirationBoards([]);
+          }
+        } catch {
+          setInspirationBoards([]);
+        }
+      } else {
+        setInspirationBoards([]);
+      }
 
-      const storedRivalImage = localStorage.getItem(`${LOCALSTORAGE_RIVAL_IMAGE_KEY_PREFIX}${user.uid}`);
+      // Load Rival Image
+      const rivalImageKey = `${LOCALSTORAGE_RIVAL_IMAGE_KEY_PREFIX}${user.uid}`;
+      const storedRivalImage = localStorage.getItem(rivalImageKey);
       if (storedRivalImage) setRivalImageSrc(storedRivalImage);
-      
-      const storedRivalXP = localStorage.getItem(`${LOCALSTORAGE_RIVAL_XP_KEY_PREFIX}${user.uid}`);
-      if (storedRivalXP) setRivalXP(JSON.parse(storedRivalXP));
+      else setRivalImageSrc("https://source.unsplash.com/random/200x100/?robot,enemy&sig=105");
 
-    } else { // No user, reset to defaults
+
+      // Load Rival XP
+      const rivalXpKey = `${LOCALSTORAGE_RIVAL_XP_KEY_PREFIX}${user.uid}`;
+      const storedRivalXP = localStorage.getItem(rivalXpKey);
+      if (storedRivalXP) {
+        try {
+          setRivalXP(JSON.parse(storedRivalXP));
+        } catch {
+          setRivalXP(1100);
+        }
+      } else {
+        setRivalXP(1100);
+      }
+
+    } else { // No user, reset all page-specific states to defaults
         setTasks(initialTasks);
         setInspirationBoards([]);
         setRivalImageSrc("https://source.unsplash.com/random/200x100/?robot,enemy&sig=105");
@@ -114,7 +158,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     }
   }, [user]);
 
-  // Persist tasks to localStorage whenever they change
+  // Persist tasks to localStorage
   useEffect(() => {
     if (user && user.uid) {
       localStorage.setItem(`${LOCALSTORAGE_DASHBOARD_TASKS_KEY_PREFIX}${user.uid}`, JSON.stringify(tasks));
@@ -268,15 +312,6 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         if (updatedSubTasks.length > 0) {
             newParentCompletedStatus = allRemainingSubtasksCompleted;
         } else {
-             // If no subtasks left, parent completion depends on its own previous status unless all were completed and now none are.
-             // If it was completed because all subtasks were, and now subtasks are removed, it might become incomplete.
-             // For simplicity, if it was completed AND all subtasks were done, and now no subtasks, keep as completed.
-             // If it was completed INDEPENDENTLY of subtasks, keep as completed.
-             // If it was incomplete, and subtasks removed, it remains incomplete.
-             // This logic may need refinement based on desired behavior for tasks with no subtasks.
-             // A simple approach: if it was completed, and now no subtasks, it remains completed.
-             // If it was completed due to subtasks, and subtasks removed make it no longer fully complete, then adjust.
-             // Current: if it was completed and subtasks were also completed, and one is removed, it might make parent incomplete.
             newParentCompletedStatus = allRemainingSubtasksCompleted ? task.isCompleted : false;
         }
 
@@ -287,10 +322,9 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
              xpChange -= task.xp;
            }
         } else if (updatedSubTasks.length === 0 && wasParentCompleted && !task.subTasks.every(st => st.isCompleted)) {
-            // If parent was completed but not all subtasks were, and we remove the last subtask,
-            // it should remain completed. No XP change for parent itself here.
+            // Parent was completed, not all subtasks were. Removing last subtask, parent remains completed.
         } else if (updatedSubTasks.length === 0 && !wasParentCompleted && task.subTasks.length > 0) {
-            // If parent was incomplete, and last subtask removed, it remains incomplete.
+            // Parent was incomplete, last subtask removed. Parent remains incomplete.
         }
 
 
@@ -308,10 +342,8 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     let currentTaskXP = 0;
     if (task.isCompleted) {
         currentTaskXP += task.xp;
-        // Only add subtask XP if parent is completed and subtask is also completed
         currentTaskXP += task.subTasks.filter(st => st.isCompleted).reduce((subSum, st) => subSum + st.xp, 0);
     } else {
-        // If parent is not completed, only add XP of completed subtasks
         currentTaskXP += task.subTasks.filter(st => st.isCompleted).reduce((subSum, st) => subSum + st.xp, 0);
     }
     return sum + currentTaskXP;
@@ -1116,3 +1148,5 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     </div>
   );
 }
+
+    

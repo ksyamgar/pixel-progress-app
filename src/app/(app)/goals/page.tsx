@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/contexts/AuthContext';
 
 const initialTasks: Task[] = [
   { id: "g1", title: "Master Tailwind CSS", description: "Complete advanced Tailwind course and build 3 projects.", xp: 200, isCompleted: false, subTasks: [{id: "g1s1", title: "Finish course videos", xp: 50, isCompleted: true}, {id: "g1s2", title: "Project 1", xp: 50, isCompleted: false}], createdAt: "2024-07-28T10:00:00.000Z", category: "study", dueDate: "2024-08-30", timeAllocation: 1200 },
@@ -39,21 +39,35 @@ interface GoalsPageProps {
 }
 
 export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPageProps) {
-  const { user } = useAuth(); // Get user for localStorage keying
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { toast } = useToast();
 
-  // Load tasks from localStorage on mount if user exists
+  // Load tasks from localStorage on user change
   useEffect(() => {
     if (user && user.uid) {
-      const storedTasks = localStorage.getItem(`${LOCALSTORAGE_GOALS_TASKS_KEY_PREFIX}${user.uid}`);
+      const tasksKey = `${LOCALSTORAGE_GOALS_TASKS_KEY_PREFIX}${user.uid}`;
+      const storedTasks = localStorage.getItem(tasksKey);
       if (storedTasks) {
-        setTasks(JSON.parse(storedTasks));
+        try {
+          const parsedTasks = JSON.parse(storedTasks);
+          if (Array.isArray(parsedTasks)) {
+            setTasks(parsedTasks);
+          } else {
+            console.warn("GoalsPage: Malformed tasks in localStorage. Resetting to defaults.");
+            setTasks(initialTasks);
+            localStorage.removeItem(tasksKey); // Clean up malformed entry
+          }
+        } catch (error) {
+          console.error("GoalsPage: Failed to parse tasks from localStorage:", error);
+          setTasks(initialTasks);
+          localStorage.removeItem(tasksKey); // Clean up corrupted entry
+        }
       } else {
-        setTasks(initialTasks); // Fallback to initial if nothing stored
+        setTasks(initialTasks); // No tasks for this user
       }
     } else {
         setTasks(initialTasks); // No user, use initial defaults
@@ -139,7 +153,7 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
             if (!newCompletedStatus && originalTaskCompleted) taskXPChange -= task.xp;
             
             const updatedSubTasks = newCompletedStatus ? task.subTasks.map(st => ({...st, isCompleted: true})) : task.subTasks;
-            if (newCompletedStatus) { // If marking parent as complete, ensure all subtasks also contribute their XP if not already
+            if (newCompletedStatus) { 
                 task.subTasks.forEach(st => {
                     if(!st.isCompleted) taskXPChange += st.xp;
                 });
@@ -164,11 +178,22 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
   };
 
   const handleClearProgress = () => {
-    setTasks([]); // Clear tasks from state, localStorage will update
-    if (setUserXP) setUserXP(0); // Reset XP, AppLayout will persist this
+    setTasks([]); 
+    if (setUserXP) { // Calculate XP to remove from *these specific tasks*
+        let xpToRemove = 0;
+        tasks.forEach(task => {
+            if (task.isCompleted) xpToRemove += task.xp;
+            task.subTasks.forEach(st => {
+                if(st.isCompleted) xpToRemove += st.xp;
+            });
+        });
+        if (xpToRemove > 0) {
+            setUserXP(prevXP => Math.max(0, prevXP - xpToRemove));
+        }
+    }
     toast({
-      title: "Progress Reset",
-      description: "All your quests and XP have been cleared.",
+      title: "Goals Page Reset",
+      description: "All your quests and their XP contributions on this page have been cleared.",
       className: "glassmorphic font-mono border-accent text-foreground text-sm",
     });
   };
@@ -189,14 +214,14 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 text-xs">
-                  <RotateCcw className="mr-1.5 h-4 w-4" /> Reset Progress
+                  <RotateCcw className="mr-1.5 h-4 w-4" /> Reset This Page
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="font-mono glassmorphic">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="font-pixel text-destructive">Confirm Reset</AlertDialogTitle>
+                  <AlertDialogTitle className="font-pixel text-destructive">Confirm Page Reset</AlertDialogTitle>
                   <AlertDialogDescription className="text-xs">
-                    Are you sure you want to reset all your progress on this page? This will delete all your quests here and set your XP contributions from these tasks to 0. This action cannot be undone for this page.
+                    Are you sure you want to reset this page? This will delete all quests listed here and adjust your total XP accordingly. This action cannot be undone for this page's tasks.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -243,3 +268,5 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
     </div>
   );
 }
+
+    
