@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Target, CalendarDays, Settings2, LucideIcon } from "lucide-react";
+import { Home, Target, CalendarDays, Settings2, type LucideIcon } from "lucide-react";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ export function SidebarNav() {
           <Link href={item.href} legacyBehavior passHref>
             <SidebarMenuButton
               className={cn(
-                "font-mono text-sm", // Apply pixel font style
+                "font-mono text-sm", 
                 "hover:bg-primary/20 hover:text-accent-foreground",
                 pathname === item.href
                   ? "bg-primary/30 text-accent-foreground font-semibold shadow-inner"
