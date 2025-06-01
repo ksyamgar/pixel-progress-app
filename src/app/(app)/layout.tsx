@@ -2,7 +2,7 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
@@ -22,39 +22,86 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
+const LOCALSTORAGE_XP_KEY_PREFIX = 'pixelProgressXP_';
+const LOCALSTORAGE_USERNAME_KEY_PREFIX = 'pixelProgressUserName_';
+const LOCALSTORAGE_USERAVATAR_KEY_PREFIX = 'pixelProgressUserAvatar_';
+
 function MainAppLayoutContent({ children }: { children: ReactNode }) {
   const { state, openMobile, isMobile, toggleSidebar, setOpenMobile } = useSidebar();
   const { user, loading: authLoading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
-  // State for user's display name and avatar, managed by this layout
   const [currentUserName, setCurrentUserName] = useState("Pixel User");
   const [userAvatar, setUserAvatar] = useState("https://placehold.co/60x60.png");
-  
+  const [userXP, setUserXP] = useState(0); // Default to 0, will be loaded
+
   const [isEditingNameInSidebar, setIsEditingNameInSidebar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const [userXP, setUserXP] = useState(1250);
+
+  // Load from localStorage on user change
+  useEffect(() => {
+    if (user && user.uid) {
+      const storedXP = localStorage.getItem(`${LOCALSTORAGE_XP_KEY_PREFIX}${user.uid}`);
+      if (storedXP !== null) setUserXP(JSON.parse(storedXP));
+      else setUserXP(0); // Default if nothing stored for this user
+
+      const storedName = localStorage.getItem(`${LOCALSTORAGE_USERNAME_KEY_PREFIX}${user.uid}`);
+      // Will be potentially overridden by Firebase profile info in the next effect if localStorage is empty
+      setCurrentUserName(storedName || user.displayName || user.email || "Pixel User");
+
+      const storedAvatar = localStorage.getItem(`${LOCALSTORAGE_USERAVATAR_KEY_PREFIX}${user.uid}`);
+      setUserAvatar(storedAvatar || user.photoURL || "https://placehold.co/60x60.png");
+
+    } else if (!authLoading && !user) { // Explicitly reset for logged out state
+      setCurrentUserName("Pixel User");
+      setUserAvatar("https://placehold.co/60x60.png");
+      setUserXP(0);
+    }
+  }, [user, authLoading]);
+
+  // Sync with Firebase user object (displayName, photoURL) if localStorage wasn't set
+  useEffect(() => {
+    if (user && user.uid) {
+      const storedName = localStorage.getItem(`${LOCALSTORAGE_USERNAME_KEY_PREFIX}${user.uid}`);
+      const storedAvatar = localStorage.getItem(`${LOCALSTORAGE_USERAVATAR_KEY_PREFIX}${user.uid}`);
+
+      // Prioritize localStorage, then Firebase, then default
+      setCurrentUserName(storedName || user.displayName || user.email || "Pixel User");
+      setUserAvatar(storedAvatar || user.photoURL || "https://placehold.co/60x60.png");
+    }
+  }, [user]);
+
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !user && pathname !== '/login' && pathname !== '/signup') {
       router.push('/login');
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, pathname]);
 
-  // This useEffect updates the layout's state when the Firebase user object changes
-  useEffect(() => {
-    if (user) {
-      setCurrentUserName(user.displayName || user.email || "Pixel User");
-      if (user.photoURL) {
-        setUserAvatar(user.photoURL);
-      } else {
-        setUserAvatar("https://placehold.co/60x60.png");
+  const persistUserXP = useCallback((newXP: number | ((prevState: number) => number)) => {
+    setUserXP(prevXP => {
+      const updatedXP = typeof newXP === 'function' ? newXP(prevXP) : newXP;
+      if (user && user.uid) {
+        localStorage.setItem(`${LOCALSTORAGE_XP_KEY_PREFIX}${user.uid}`, JSON.stringify(updatedXP));
       }
+      return updatedXP;
+    });
+  }, [user]);
+
+  const persistUserName = useCallback((newName: string) => {
+    setCurrentUserName(newName);
+    if (user && user.uid) {
+      localStorage.setItem(`${LOCALSTORAGE_USERNAME_KEY_PREFIX}${user.uid}`, newName);
     }
-    // No 'else' here to reset, to prevent accidental resets if 'user' flickers.
-    // The redirect logic above and authLoading check should handle states where there's no user.
-  }, [user]); // Re-run when the user object itself changes
+  }, [user]);
+
+  const persistUserAvatar = useCallback((newAvatar: string) => {
+    setUserAvatar(newAvatar);
+    if (user && user.uid) {
+      localStorage.setItem(`${LOCALSTORAGE_USERAVATAR_KEY_PREFIX}${user.uid}`, newAvatar);
+    }
+  }, [user]);
 
 
   const handleAvatarClick = () => {
@@ -67,8 +114,8 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        setUserAvatar(reader.result as string); // Updates state in AppLayout
-        // TODO: If user is logged in, offer to save this to their Firebase profile
+        persistUserAvatar(reader.result as string);
+        // TODO: Offer to save to Firebase profile
       };
       reader.readAsDataURL(file);
     }
@@ -76,9 +123,9 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
 
   const handleUserNameSaveInSidebar = (newName: string) => {
     const finalName = newName.trim() === "" ? (user?.email || "Pixel User") : newName.trim();
-    setCurrentUserName(finalName); // Updates state in AppLayout
+    persistUserName(finalName);
     setIsEditingNameInSidebar(false);
-    // TODO: If user is logged in, offer to save this
+    // TODO: Offer to save to Firebase profile
   };
 
   const handleUserNameKeyDownInSidebar = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -92,10 +139,11 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
 
   const handleLogout = async () => {
     await logout();
-    // Reset local state on logout to defaults
+    // Reset React state for the session, localStorage for this user remains
     setCurrentUserName("Pixel User");
     setUserAvatar("https://placehold.co/60x60.png");
-    setUserXP(0); 
+    setUserXP(0);
+    router.push('/login');
   };
 
   if (authLoading) {
@@ -107,21 +155,19 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
   }
 
   if (!user && pathname !== '/login' && pathname !== '/signup') {
-    return (
+     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p className="text-foreground">Redirecting to login...</p>
             <LoadingSpinner size="md" />
         </div>
     );
   }
-  
+
   if (!user && (pathname === '/login' || pathname === '/signup')) {
-     // If user is not logged in and on login/signup page, don't render the main layout
-     // The login/signup pages will render themselves via the children prop
-     return <>{children}</>; 
+     return <>{children}</>;
   }
-  
-  if (!user) return null; // Should be covered by redirect, but as a fallback
+
+  if (!user) return null;
 
   return (
     <>
@@ -143,7 +189,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
           <div className="flex flex-col items-center justify-center">
             <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
               <Image
-                src={userAvatar} // Uses state from AppLayout
+                src={userAvatar}
                 alt="User Avatar"
                 data-ai-hint="pixel game avatar"
                 width={50}
@@ -165,7 +211,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
               {isEditingNameInSidebar ? (
                 <Input
                   type="text"
-                  defaultValue={currentUserName} // Uses state from AppLayout
+                  defaultValue={currentUserName}
                   onBlur={(e) => handleUserNameSaveInSidebar(e.target.value)}
                   onKeyDown={handleUserNameKeyDownInSidebar}
                   autoFocus
@@ -199,16 +245,13 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
           {React.Children.map(children, (child) => {
             if (React.isValidElement(child)) {
               // @ts-ignore
-              return React.cloneElement(child, { 
-                // Pass XP state
-                userXP, 
-                setUserXP, 
-                // Pass current user name and avatar (values)
-                layoutUserName: currentUserName, 
+              return React.cloneElement(child, {
+                userXP: userXP,
+                setUserXP: persistUserXP, // Pass the persisting setter
+                layoutUserName: currentUserName,
                 layoutUserAvatar: userAvatar,
-                // Pass setters for name and avatar, so children can update AppLayout's state
-                setLayoutUserName: setCurrentUserName,
-                setLayoutUserAvatar: setUserAvatar,
+                setLayoutUserName: persistUserName, // Pass the persisting setter
+                setLayoutUserAvatar: persistUserAvatar, // Pass the persisting setter
                });
             }
             return child;

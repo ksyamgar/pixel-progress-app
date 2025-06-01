@@ -24,17 +24,16 @@ export function UserProfileSettingsForm({
   currentNameFromLayout,
   updateGlobalName,
 }: UserProfileSettingsFormProps) {
-  const { user } = useAuth(); // Get user for email display
+  const { user } = useAuth(); 
   const { toast } = useToast();
 
   const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInputValue, setNameInputValue] = useState(currentNameFromLayout); // Local state for the input field
+  const [nameInputValue, setNameInputValue] = useState(currentNameFromLayout);
   const avatarFileRef = useRef<HTMLInputElement>(null);
 
-  // Effect to synchronize local nameInputValue with the global currentNameFromLayout prop
-  // This ensures if the name is changed via sidebar, settings form reflects it when not in edit mode
   useEffect(() => {
-    if (!isEditingName) { // Only update if not actively editing to avoid disrupting user input
+    // Sync with prop if not editing
+    if (!isEditingName) {
         setNameInputValue(currentNameFromLayout);
     }
   }, [currentNameFromLayout, isEditingName]);
@@ -49,8 +48,8 @@ export function UserProfileSettingsForm({
       const reader = new FileReader();
       reader.onloadend = () => {
         const newAvatarSrc = reader.result as string;
-        updateGlobalAvatar(newAvatarSrc); // Call the setter from AppLayout
-        toast({ title: "Avatar Updated", description: "Your new avatar is set locally.", className: "glassmorphic font-mono text-xs" });
+        updateGlobalAvatar(newAvatarSrc); 
+        toast({ title: "Avatar Updated", description: "Your new avatar is set.", className: "glassmorphic font-mono text-xs" });
         // TODO: Persist to Firebase user.updateProfile({ photoURL: newAvatarSrc })
       };
       reader.readAsDataURL(file);
@@ -59,20 +58,18 @@ export function UserProfileSettingsForm({
   
   const handleNameEditToggle = () => {
     if (isEditingName) {
-      // If currently editing, try to save the name
       saveName();
     } else {
-      // If not editing, set the input value to the current global name before enabling edit mode
-      setNameInputValue(currentNameFromLayout); 
-      setIsEditingName(true); // Enter edit mode
+      setNameInputValue(currentNameFromLayout); // Ensure input starts with current global name
+      setIsEditingName(true);
     }
   };
   
   const saveName = () => {
     const finalName = nameInputValue.trim() === "" ? (user?.email || "Pixel User") : nameInputValue.trim();
-    updateGlobalName(finalName); // Call the setter from AppLayout
-    setIsEditingName(false); // Exit edit mode
-    toast({ title: "Display Name Updated", description: `Your name is now "${finalName}" locally.`, className: "glassmorphic font-mono text-xs" });
+    updateGlobalName(finalName); 
+    setIsEditingName(false);
+    toast({ title: "Display Name Updated", description: `Your name is now "${finalName}".`, className: "glassmorphic font-mono text-xs" });
     // TODO: Persist to Firebase user.updateProfile({ displayName: finalName })
   };
 
@@ -85,7 +82,7 @@ export function UserProfileSettingsForm({
       saveName();
       event.preventDefault(); 
     } else if (event.key === 'Escape') {
-      setNameInputValue(currentNameFromLayout); // Reset to original on escape
+      setNameInputValue(currentNameFromLayout); 
       setIsEditingName(false);
     }
   };
@@ -101,7 +98,7 @@ export function UserProfileSettingsForm({
           <Label className="text-sm font-medium text-primary-foreground/80">Profile Picture</Label>
           <div className="mt-2 flex items-center gap-4 flex-wrap">
             <Image
-              src={currentAvatarFromLayout} // Use the prop from AppLayout
+              src={currentAvatarFromLayout} 
               alt="User Avatar"
               data-ai-hint="pixel game avatar"
               width={80}
@@ -132,9 +129,8 @@ export function UserProfileSettingsForm({
                 onChange={handleNameInputChange}
                 onKeyDown={handleNameInputKeyDown}
                 onBlur={() => { 
-                    // To prevent saving on blur if user clicks "Save" button immediately
-                    // We rely on the Save button or Enter key for explicit save
-                    // If you want save on blur:
+                    // Only save on explicit action (Enter or Save button)
+                    // Or if you want save on blur:
                     // if (isEditingName && nameInputValue !== currentNameFromLayout) saveName(); else setIsEditingName(false);
                 }} 
                 autoFocus
@@ -142,7 +138,7 @@ export function UserProfileSettingsForm({
               />
             ) : (
               <p className="text-lg text-primary-foreground flex-grow py-1.5 px-3 rounded-md bg-card/30 border border-transparent h-9 flex items-center min-h-[36px]">
-                {currentNameFromLayout} {/* Display prop from AppLayout */}
+                {currentNameFromLayout} 
               </p>
             )}
             <Button 

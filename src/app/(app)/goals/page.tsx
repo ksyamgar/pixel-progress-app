@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 
 const initialTasks: Task[] = [
   { id: "g1", title: "Master Tailwind CSS", description: "Complete advanced Tailwind course and build 3 projects.", xp: 200, isCompleted: false, subTasks: [{id: "g1s1", title: "Finish course videos", xp: 50, isCompleted: true}, {id: "g1s2", title: "Project 1", xp: 50, isCompleted: false}], createdAt: "2024-07-28T10:00:00.000Z", category: "study", dueDate: "2024-08-30", timeAllocation: 1200 },
@@ -28,19 +29,44 @@ const initialTasks: Task[] = [
   { id: "g3", title: "Develop Pixel Progress App", description: "Implement core features for the app.", xp: 500, isCompleted: false, subTasks: [], createdAt: "2024-07-28T10:10:00.000Z", category: "work", dueDate: "2024-09-15" },
 ];
 
+const LOCALSTORAGE_GOALS_TASKS_KEY_PREFIX = 'pixelProgressGoalsTasks_';
+
+
 interface GoalsPageProps {
-  userXP?: number; // userXP is now a prop
-  setUserXP?: Dispatch<SetStateAction<number>>; // setUserXP is now a prop
+  userXP?: number;
+  setUserXP?: Dispatch<SetStateAction<number>>;
   userName?: string;
 }
 
 export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPageProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { user } = useAuth(); // Get user for localStorage keying
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  // userXP and setUserXP are now props
   const { toast } = useToast();
+
+  // Load tasks from localStorage on mount if user exists
+  useEffect(() => {
+    if (user && user.uid) {
+      const storedTasks = localStorage.getItem(`${LOCALSTORAGE_GOALS_TASKS_KEY_PREFIX}${user.uid}`);
+      if (storedTasks) {
+        setTasks(JSON.parse(storedTasks));
+      } else {
+        setTasks(initialTasks); // Fallback to initial if nothing stored
+      }
+    } else {
+        setTasks(initialTasks); // No user, use initial defaults
+    }
+  }, [user]);
+
+  // Persist tasks to localStorage whenever they change
+  useEffect(() => {
+    if (user && user.uid) {
+      localStorage.setItem(`${LOCALSTORAGE_GOALS_TASKS_KEY_PREFIX}${user.uid}`, JSON.stringify(tasks));
+    }
+  }, [tasks, user]);
+
 
   const handleOpenForm = (task?: Task) => {
     setEditingTask(task || null);
@@ -58,6 +84,23 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
   };
 
   const handleDeleteGoal = (taskId: string) => {
+    const taskToDelete = tasks.find(t => t.id === taskId);
+    if (taskToDelete && setUserXP) {
+        let xpChange = 0;
+        if (taskToDelete.isCompleted) {
+            xpChange -= taskToDelete.xp;
+            taskToDelete.subTasks.forEach(st => {
+                if(st.isCompleted) xpChange -= st.xp;
+            });
+        } else {
+            taskToDelete.subTasks.forEach(st => {
+                if(st.isCompleted) xpChange -= st.xp;
+            });
+        }
+        if (xpChange !== 0) {
+            setUserXP(prevXP => prevXP + xpChange);
+        }
+    }
     setTasks(prev => prev.filter(t => t.id !== taskId));
   };
 
@@ -85,7 +128,7 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
             if(newOverallCompletedStatus && !originalTaskCompleted && task.subTasks.length > 0) taskXPChange += task.xp;
             if(!newOverallCompletedStatus && originalTaskCompleted && task.subTasks.length > 0) taskXPChange -= task.xp;
             
-            if (taskXPChange !== 0) {
+            if (taskXPChange !== 0 && setUserXP) {
               setUserXP(prevXP => prevXP + taskXPChange);
             }
             return { ...task, subTasks: updatedSubTasks, isCompleted: newOverallCompletedStatus };
@@ -96,13 +139,13 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
             if (!newCompletedStatus && originalTaskCompleted) taskXPChange -= task.xp;
             
             const updatedSubTasks = newCompletedStatus ? task.subTasks.map(st => ({...st, isCompleted: true})) : task.subTasks;
-            if (newCompletedStatus) {
+            if (newCompletedStatus) { // If marking parent as complete, ensure all subtasks also contribute their XP if not already
                 task.subTasks.forEach(st => {
                     if(!st.isCompleted) taskXPChange += st.xp;
                 });
             }
             
-            if (taskXPChange !== 0) {
+            if (taskXPChange !== 0 && setUserXP) {
                 setUserXP(prevXP => prevXP + taskXPChange);
             }
             return { ...task, isCompleted: newCompletedStatus, subTasks: updatedSubTasks };
@@ -121,8 +164,8 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
   };
 
   const handleClearProgress = () => {
-    setTasks([]);
-    setUserXP(0); // Use the passed-in setUserXP
+    setTasks([]); // Clear tasks from state, localStorage will update
+    if (setUserXP) setUserXP(0); // Reset XP, AppLayout will persist this
     toast({
       title: "Progress Reset",
       description: "All your quests and XP have been cleared.",
@@ -153,7 +196,7 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
                 <AlertDialogHeader>
                   <AlertDialogTitle className="font-pixel text-destructive">Confirm Reset</AlertDialogTitle>
                   <AlertDialogDescription className="text-xs">
-                    Are you sure you want to reset all your progress? This will delete all your quests and set your XP to 0. This action cannot be undone.
+                    Are you sure you want to reset all your progress on this page? This will delete all your quests here and set your XP contributions from these tasks to 0. This action cannot be undone for this page.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -162,7 +205,7 @@ export default function GoalsPage({ userXP = 0, setUserXP = () => {} }: GoalsPag
                     onClick={handleClearProgress}
                     className="text-xs h-8 bg-destructive hover:bg-destructive/80"
                   >
-                    Yes, Reset Everything
+                    Yes, Reset This Page
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

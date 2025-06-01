@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 
 const initialTasks: Task[] = [
   { id: "qt1", title: "Review PRD for new feature", xp: 25, isCompleted: false, 
@@ -33,6 +34,12 @@ const initialTasks: Task[] = [
   { id: "qt4", title: "Reply to important emails", xp: 20, isCompleted: false, subTasks: [], createdAt: "2024-07-30T09:00:00.000Z", category: "work", timeAllocation: 45, images: [], dataAiHints: [], notes: "Client X, Project Y follow-up." },
 ];
 
+const LOCALSTORAGE_DASHBOARD_TASKS_KEY_PREFIX = 'pixelProgressDashboardTasks_';
+const LOCALSTORAGE_INSPIRATION_BOARDS_KEY_PREFIX = 'pixelProgressInspirationBoards_';
+const LOCALSTORAGE_RIVAL_IMAGE_KEY_PREFIX = 'pixelProgressRivalImage_';
+const LOCALSTORAGE_RIVAL_XP_KEY_PREFIX = 'pixelProgressRivalXP_';
+
+
 interface DashboardPageProps {
   userXP?: number;
   setUserXP?: Dispatch<SetStateAction<number>>;
@@ -40,7 +47,8 @@ interface DashboardPageProps {
 }
 
 export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: DashboardPageProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { user } = useAuth(); // Get user for localStorage keying
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [rivalXP, setRivalXP] = useState(1100);
   
@@ -78,6 +86,62 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
   const rivalImageInputRef = useRef<HTMLInputElement>(null);
 
   const [newSubtaskData, setNewSubtaskData] = useState<{ [taskId: string]: { title: string; xp: number } }>({});
+
+  // Load tasks, boards, rival data from localStorage on mount if user exists
+  useEffect(() => {
+    if (user && user.uid) {
+      const storedTasks = localStorage.getItem(`${LOCALSTORAGE_DASHBOARD_TASKS_KEY_PREFIX}${user.uid}`);
+      if (storedTasks) {
+        setTasks(JSON.parse(storedTasks));
+      } else {
+        setTasks(initialTasks); // Fallback to initial if nothing stored for this user
+      }
+
+      const storedBoards = localStorage.getItem(`${LOCALSTORAGE_INSPIRATION_BOARDS_KEY_PREFIX}${user.uid}`);
+      if (storedBoards) setInspirationBoards(JSON.parse(storedBoards));
+
+      const storedRivalImage = localStorage.getItem(`${LOCALSTORAGE_RIVAL_IMAGE_KEY_PREFIX}${user.uid}`);
+      if (storedRivalImage) setRivalImageSrc(storedRivalImage);
+      
+      const storedRivalXP = localStorage.getItem(`${LOCALSTORAGE_RIVAL_XP_KEY_PREFIX}${user.uid}`);
+      if (storedRivalXP) setRivalXP(JSON.parse(storedRivalXP));
+
+    } else { // No user, reset to defaults
+        setTasks(initialTasks);
+        setInspirationBoards([]);
+        setRivalImageSrc("https://source.unsplash.com/random/200x100/?robot,enemy&sig=105");
+        setRivalXP(1100);
+    }
+  }, [user]);
+
+  // Persist tasks to localStorage whenever they change
+  useEffect(() => {
+    if (user && user.uid) {
+      localStorage.setItem(`${LOCALSTORAGE_DASHBOARD_TASKS_KEY_PREFIX}${user.uid}`, JSON.stringify(tasks));
+    }
+  }, [tasks, user]);
+
+  // Persist inspiration boards
+  useEffect(() => {
+    if (user && user.uid) {
+      localStorage.setItem(`${LOCALSTORAGE_INSPIRATION_BOARDS_KEY_PREFIX}${user.uid}`, JSON.stringify(inspirationBoards));
+    }
+  }, [inspirationBoards, user]);
+
+  // Persist rival image
+  useEffect(() => {
+    if (user && user.uid) {
+      localStorage.setItem(`${LOCALSTORAGE_RIVAL_IMAGE_KEY_PREFIX}${user.uid}`, rivalImageSrc);
+    }
+  }, [rivalImageSrc, user]);
+  
+  // Persist rival XP
+  useEffect(() => {
+    if (user && user.uid) {
+      localStorage.setItem(`${LOCALSTORAGE_RIVAL_XP_KEY_PREFIX}${user.uid}`, JSON.stringify(rivalXP));
+    }
+  }, [rivalXP, user]);
+
 
   useEffect(() => {
     return () => {
@@ -141,7 +205,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
               taskXPChange -= task.xp; 
             }
             
-            if (taskXPChange !== 0) {
+            if (taskXPChange !== 0 && setUserXP) {
               setUserXP(prevXP => prevXP + taskXPChange);
             }
             return { ...task, subTasks: updatedSubTasks, isCompleted: newOverallCompletedStatus };
@@ -156,7 +220,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                 return {...st, isCompleted: true};
             }) : task.subTasks; 
 
-            if (taskXPChange !== 0) {
+            if (taskXPChange !== 0 && setUserXP) {
                 setUserXP(prevXP => prevXP + taskXPChange);
             }
             const finalCompletedStatus = newCompletedStatus;
@@ -204,7 +268,16 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         if (updatedSubTasks.length > 0) {
             newParentCompletedStatus = allRemainingSubtasksCompleted;
         } else {
-             newParentCompletedStatus = allRemainingSubtasksCompleted ? task.isCompleted : false; 
+             // If no subtasks left, parent completion depends on its own previous status unless all were completed and now none are.
+             // If it was completed because all subtasks were, and now subtasks are removed, it might become incomplete.
+             // For simplicity, if it was completed AND all subtasks were done, and now no subtasks, keep as completed.
+             // If it was completed INDEPENDENTLY of subtasks, keep as completed.
+             // If it was incomplete, and subtasks removed, it remains incomplete.
+             // This logic may need refinement based on desired behavior for tasks with no subtasks.
+             // A simple approach: if it was completed, and now no subtasks, it remains completed.
+             // If it was completed due to subtasks, and subtasks removed make it no longer fully complete, then adjust.
+             // Current: if it was completed and subtasks were also completed, and one is removed, it might make parent incomplete.
+            newParentCompletedStatus = allRemainingSubtasksCompleted ? task.isCompleted : false;
         }
 
         if (newParentCompletedStatus && !wasParentCompleted && updatedSubTasks.length > 0) { 
@@ -213,9 +286,15 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
            if(task.subTasks.every(st => st.isCompleted)){ 
              xpChange -= task.xp;
            }
+        } else if (updatedSubTasks.length === 0 && wasParentCompleted && !task.subTasks.every(st => st.isCompleted)) {
+            // If parent was completed but not all subtasks were, and we remove the last subtask,
+            // it should remain completed. No XP change for parent itself here.
+        } else if (updatedSubTasks.length === 0 && !wasParentCompleted && task.subTasks.length > 0) {
+            // If parent was incomplete, and last subtask removed, it remains incomplete.
         }
 
-        if (xpChange !== 0) {
+
+        if (xpChange !== 0 && setUserXP) {
           setUserXP(prevXP => prevXP + xpChange);
         }
         return { ...task, subTasks: updatedSubTasks, isCompleted: newParentCompletedStatus };
@@ -229,8 +308,10 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     let currentTaskXP = 0;
     if (task.isCompleted) {
         currentTaskXP += task.xp;
+        // Only add subtask XP if parent is completed and subtask is also completed
         currentTaskXP += task.subTasks.filter(st => st.isCompleted).reduce((subSum, st) => subSum + st.xp, 0);
     } else {
+        // If parent is not completed, only add XP of completed subtasks
         currentTaskXP += task.subTasks.filter(st => st.isCompleted).reduce((subSum, st) => subSum + st.xp, 0);
     }
     return sum + currentTaskXP;
@@ -265,7 +346,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         const reader = new FileReader();
         reader.onloadend = () => {
           const newImage: InspirationImage = {
-            id: String(Date.now()) + Math.random(), // Ensure unique ID
+            id: String(Date.now()) + Math.random(), 
             src: reader.result as string,
             dataAiHint: "custom upload",
           };
@@ -277,9 +358,9 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         };
         reader.readAsDataURL(file);
       });
-      if(event.target) event.target.value = ""; // Reset file input
+      if(event.target) event.target.value = ""; 
     }
-    setActiveBoardForFileUpload(null); // Reset active board after upload
+    setActiveBoardForFileUpload(null); 
   };
 
   const triggerInspirationFileUpload = (boardId: string) => {
@@ -377,7 +458,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
 
   const handleDeleteTask = (taskId: string) => {
      const taskToDelete = tasks.find(t => t.id === taskId);
-    if (taskToDelete) {
+    if (taskToDelete && setUserXP) {
         let xpChange = 0;
         if (taskToDelete.isCompleted) {
             xpChange -= taskToDelete.xp;
