@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -23,13 +23,20 @@ export default function SignupPage() {
   const { signup, user, loading: authLoading } = useAuth();
   const router = useRouter();
   
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/'); // Redirect if already logged in
+    }
+  }, [user, authLoading, router]);
+
   if (authLoading) {
       return <div className="flex items-center justify-center min-h-screen bg-background"><AlertCircle className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  if (user) {
-    router.push('/'); // Redirect if already logged in
-    return null;
+  // If user is already defined and we're not loading, useEffect will handle redirect.
+  // Return null or a minimal loader here to prevent rendering the form briefly.
+  if (user && !authLoading) {
+    return <div className="flex items-center justify-center min-h-screen bg-background"><p>Redirecting...</p></div>;
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -61,7 +68,7 @@ export default function SignupPage() {
                 setError(result.message || "An unexpected error occurred. Please try again.");
         }
     } else { // It's a User object
-      router.push('/');
+      // Redirection will be handled by the useEffect hook after user state updates
     }
   };
 
@@ -96,7 +103,7 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <Label htmlFor="password"_className="text-xs text-primary-foreground/80">Password</Label>
+            <Label htmlFor="password" className="text-xs text-primary-foreground/80">Password</Label>
             <Input
               id="password"
               type="password"
@@ -119,9 +126,9 @@ export default function SignupPage() {
               placeholder="••••••••"
             />
           </div>
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/80 h-9" disabled={loading}>
-             {loading ? <UserPlus className="mr-2 h-4 w-4 animate-pulse" /> : <UserPlus className="mr-2 h-4 w-4" />}
-            {loading ? 'Creating Account...' : 'Create Account'}
+          <Button type="submit" className="w-full bg-primary hover:bg-primary/80 h-9" disabled={loading || authLoading}>
+             {loading || authLoading ? <UserPlus className="mr-2 h-4 w-4 animate-pulse" /> : <UserPlus className="mr-2 h-4 w-4" />}
+            {loading || authLoading ? 'Creating Account...' : 'Create Account'}
           </Button>
         </form>
         <p className="text-center text-xs text-muted-foreground">

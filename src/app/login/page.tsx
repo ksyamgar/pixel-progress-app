@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,20 @@ export default function LoginPage() {
   const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/'); // Redirect if already logged in
+    }
+  }, [user, authLoading, router]);
+
   if (authLoading) {
       return <div className="flex items-center justify-center min-h-screen bg-background"><AlertCircle className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  if (user) {
-    router.push('/'); // Redirect if already logged in
-    return null;
+  // If user is already defined and we're not loading, useEffect will handle redirect.
+  // Return null or a minimal loader here to prevent rendering the form briefly.
+  if (user && !authLoading) {
+    return <div className="flex items-center justify-center min-h-screen bg-background"><p>Redirecting...</p></div>;
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -50,7 +57,7 @@ export default function LoginPage() {
                 setError(result.message || "An unexpected error occurred. Please try again.");
         }
     } else { // It's a User object
-      router.push('/');
+      // Redirection will be handled by the useEffect hook after user state updates
     }
   };
 
@@ -96,9 +103,9 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/80 h-9" disabled={loading}>
-            {loading ? <LogIn className="mr-2 h-4 w-4 animate-pulse" /> : <LogIn className="mr-2 h-4 w-4" />}
-            {loading ? 'Logging In...' : 'Login'}
+          <Button type="submit" className="w-full bg-primary hover:bg-primary/80 h-9" disabled={loading || authLoading}>
+            {loading || authLoading ? <LogIn className="mr-2 h-4 w-4 animate-pulse" /> : <LogIn className="mr-2 h-4 w-4" />}
+            {loading || authLoading ? 'Logging In...' : 'Login'}
           </Button>
         </form>
         <p className="text-center text-xs text-muted-foreground">
