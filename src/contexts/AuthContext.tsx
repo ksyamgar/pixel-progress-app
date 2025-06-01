@@ -1,11 +1,11 @@
 
 "use client";
 
-import type { ReactNode, Dispatch, SetStateAction } from 'react';
+import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { type User, onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, type AuthError } from 'firebase/auth';
 import { auth } from '@/lib/firebaseConfig';
-import { useRouter } from 'next/navigation'; // Corrected import
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-      setUser(userCredential.user);
+      // setUser(userCredential.user) is handled by onAuthStateChanged
       setLoading(false);
       return userCredential.user;
     } catch (error) {
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-      setUser(userCredential.user);
+      // setUser(userCredential.user) is handled by onAuthStateChanged
       setLoading(false);
       return userCredential.user;
     } catch (error) {
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     setLoading(true);
     await firebaseSignOut(auth);
-    setUser(null);
+    // setUser(null) will be handled by onAuthStateChanged
     setLoading(false);
     router.push('/login');
   };
