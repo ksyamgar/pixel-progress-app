@@ -2,7 +2,8 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -18,15 +19,38 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LogOut, UploadCloud, Edit2, ChevronsLeft, X } from 'lucide-react';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
-// This new inner component will render the actual layout and can safely use the useSidebar hook
 function MainAppLayoutContent({ children }: { children: ReactNode }) {
   const { state, openMobile, isMobile, toggleSidebar, setOpenMobile } = useSidebar();
+  const { user, loading: authLoading, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [userAvatar, setUserAvatar] = useState("https://placehold.co/60x60.png");
-  const [userName, setUserName] = useState("Pixel User");
+  const [currentUserName, setCurrentUserName] = useState("Pixel User"); // Renamed to avoid conflict with user prop
   const [isEditingName, setIsEditingName] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const [userXP, setUserXP] = useState(1250); // XP state is now managed here
+  const [userXP, setUserXP] = useState(1250);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (user) {
+      setCurrentUserName(user.displayName || user.email || "Pixel User");
+      // Potentially load avatar from user.photoURL if available
+      // if (user.photoURL) setUserAvatar(user.photoURL);
+    } else {
+      setCurrentUserName("Pixel User"); // Reset if user logs out
+      setUserAvatar("https://placehold.co/60x60.png");
+    }
+  }, [user]);
+
 
   const handleAvatarClick = () => {
     if (isEditingName) return;
@@ -39,14 +63,17 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setUserAvatar(reader.result as string);
+        // TODO: If user is logged in, offer to save this to their Firebase profile
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleUserNameSave = (newName: string) => {
-    setUserName(newName.trim() === "" ? "Pixel User" : newName.trim());
+    const finalName = newName.trim() === "" ? (user?.email || "Pixel User") : newName.trim();
+    setCurrentUserName(finalName);
     setIsEditingName(false);
+    // TODO: If user is logged in, offer to save this (user.updateProfile({displayName: finalName}))
   };
 
   const handleUserNameKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -57,6 +84,31 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
       setIsEditingName(false);
     }
   };
+
+  const handleLogout = async () => {
+    await logout();
+    // setUserXP(0); // Reset local XP on logout, or handle this based on app logic
+  };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!user && pathname !== '/login' && pathname !== '/signup') {
+     // This will be caught by useEffect and redirect, but as a fallback
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-background">
+            <p className="text-foreground">Redirecting to login...</p>
+            <LoadingSpinner size="md" />
+        </div>
+    );
+  }
+  
+  if (!user) return null; // Should be redirected by now
 
   return (
     <>
@@ -100,7 +152,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
               {isEditingName ? (
                 <Input
                   type="text"
-                  defaultValue={userName}
+                  defaultValue={currentUserName}
                   onBlur={(e) => handleUserNameSave(e.target.value)}
                   onKeyDown={handleUserNameKeyDown}
                   autoFocus
@@ -108,7 +160,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
                   style={{ minWidth: '80px', maxWidth: '120px' }}
                 />
               ) : (
-                <div className="font-pixel text-sm font-bold text-primary truncate max-w-[120px]">{userName}</div>
+                <div className="font-pixel text-sm font-bold text-primary truncate max-w-[120px]">{currentUserName}</div>
               )}
               {!isEditingName && (
                 <Button variant="ghost" size="icon" onClick={() => setIsEditingName(true)} className="h-5 w-5 p-0.5">
@@ -122,19 +174,19 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
           <SidebarNav />
         </SidebarContent>
         <SidebarFooter className="p-0.5">
-          <Button variant="ghost" className="w-full justify-start font-mono text-sidebar-foreground hover:bg-primary/20 hover:text-accent-foreground group-data-[collapsible=icon]:justify-center h-7 text-xs">
+          <Button variant="ghost" onClick={handleLogout} className="w-full justify-start font-mono text-sidebar-foreground hover:bg-primary/20 hover:text-accent-foreground group-data-[collapsible=icon]:justify-center h-7 text-xs">
             <LogOut className="mr-1.5 h-3 w-3 group-data-[collapsible=icon]:mr-0" />
             <span className="group-data-[collapsible=icon]:hidden">Logout</span>
           </Button>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col bg-background">
-        <Header userName={userName} userXP={userXP} />
+        <Header userName={currentUserName} userXP={userXP} />
         <main className="flex-1 overflow-y-auto max-sm:p-1.5 sm:p-2.5 md:p-3.5">
           {React.Children.map(children, (child) => {
             if (React.isValidElement(child)) {
               // @ts-ignore
-              return React.cloneElement(child, { userXP, setUserXP, userName });
+              return React.cloneElement(child, { userXP, setUserXP, userName: currentUserName });
             }
             return child;
           })}
