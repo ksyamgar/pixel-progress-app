@@ -27,9 +27,9 @@ const initialTasks: Task[] = [
       { id: "qt1s1", title: "Read section 1-2", xp: 10, isCompleted: false },
       { id: "qt1s2", title: "Check competitor analysis", xp: 5, isCompleted: false },
     ], 
-    createdAt: "2024-07-30T10:00:00.000Z", category: "work", timeAllocation: 60, notes: "Focus on AI rival customization details. Check section 3.2.1. This note is a bit longer to test the scrolling and layout of the notes area, ensuring it handles multiline content effectively.", images: ["https://source.unsplash.com/random/100x100/?document&sig=1", "https://source.unsplash.com/random/100x100/?office&sig=2"], dataAiHints: ["document", "office"] },
+    createdAt: "2024-07-30T10:00:00.000Z", category: "work", timeAllocation: 60, notes: "Focus on AI rival customization details. Check section 3.2.1. This note is a bit longer to test the scrolling and layout of the notes area, ensuring it handles multiline content effectively.", images: [], dataAiHints: [] },
   { id: "qt2", title: "Quick 15-min stretch", xp: 10, isCompleted: true, subTasks: [], createdAt: "2024-07-30T08:00:00.000Z", category: "fitness", timeAllocation: 15, images: [], notes: "", dataAiHints: [] },
-  { id: "qt3", title: "Brainstorm ideas for pixel art character", xp: 15, isCompleted: false, subTasks: [], createdAt: "2024-07-30T14:00:00.000Z", category: "hobby", timeAllocation: 30, images: ["https://source.unsplash.com/random/100x100/?pixelart&sig=3", "https://source.unsplash.com/random/100x100/?characterdesign&sig=4", "https://source.unsplash.com/random/100x100/?fantasy&sig=5"], notes:"Explore different color palettes. Try a cyberpunk theme.", dataAiHints: ["pixelart", "character design", "fantasy"]},
+  { id: "qt3", title: "Brainstorm ideas for pixel art character", xp: 15, isCompleted: false, subTasks: [], createdAt: "2024-07-30T14:00:00.000Z", category: "hobby", timeAllocation: 30, images: [], notes:"Explore different color palettes. Try a cyberpunk theme.", dataAiHints: []},
   { id: "qt4", title: "Reply to important emails", xp: 20, isCompleted: false, subTasks: [], createdAt: "2024-07-30T09:00:00.000Z", category: "work", timeAllocation: 45, images: [], notes: "Client X, Project Y follow-up.", dataAiHints: [] },
 ];
 
@@ -981,3 +981,4 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     </div>
   );
 }
+
