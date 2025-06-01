@@ -20,9 +20,9 @@ export interface Task {
   category?: string; // For icon mapping
   image?: string; // Single image for GoalForm tasks (main task image)
   
-  // New fields for quick tasks & potentially detailed tasks
   notes?: string;
   images?: string[]; // Array of data URIs for multiple images per task
+  dataAiHints?: string[]; // Corresponding AI hints for the 'images' array
 }
 
 export interface AIRival {
@@ -55,3 +55,16 @@ export const XP_GAIN_RULES = [
   { id: 'dailyFlatRate', name: 'Daily Flat Rate' },
 ] as const;
 export type XPGainRuleId = typeof XP_GAIN_RULES[number]['id'];
+
+// New types for Inspiration Boards
+export interface InspirationImage {
+  id: string;
+  src: string;
+  dataAiHint: string;
+}
+
+export interface InspirationBoard {
+  id: string;
+  title: string;
+  images: InspirationImage[];
+}

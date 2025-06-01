@@ -9,8 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { GlassCard } from "@/components/shared/glass-card";
-import type { Task, SubTask } from "@/lib/types";
-import { PlusCircle, Zap, Target, ListChecks, Edit3, Trash2, Camera, Upload, XCircle, Image as ImageIcon, ChevronDown, BookOpen, Save, UploadCloud } from "lucide-react";
+import type { Task, SubTask, InspirationBoard, InspirationImage } from "@/lib/types";
+import { PlusCircle, Zap, Target, ListChecks, Edit3, Trash2, Camera, Upload, XCircle, Image as ImageIconLucide, ChevronDown, BookOpen, Save, UploadCloud, Brain } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import NextImage from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -28,9 +28,9 @@ const initialTasks: Task[] = [
       { id: "qt1s2", title: "Check competitor analysis", xp: 5, isCompleted: false },
     ], 
     createdAt: "2024-07-30T10:00:00.000Z", category: "work", timeAllocation: 60, notes: "Focus on AI rival customization details. Check section 3.2.1. This note is a bit longer to test the scrolling and layout of the notes area, ensuring it handles multiline content effectively.", images: [], dataAiHints: [] },
-  { id: "qt2", title: "Quick 15-min stretch", xp: 10, isCompleted: true, subTasks: [], createdAt: "2024-07-30T08:00:00.000Z", category: "fitness", timeAllocation: 15, images: [], notes: "", dataAiHints: [] },
-  { id: "qt3", title: "Brainstorm ideas for pixel art character", xp: 15, isCompleted: false, subTasks: [], createdAt: "2024-07-30T14:00:00.000Z", category: "hobby", timeAllocation: 30, images: [], notes:"Explore different color palettes. Try a cyberpunk theme.", dataAiHints: []},
-  { id: "qt4", title: "Reply to important emails", xp: 20, isCompleted: false, subTasks: [], createdAt: "2024-07-30T09:00:00.000Z", category: "work", timeAllocation: 45, images: [], notes: "Client X, Project Y follow-up.", dataAiHints: [] },
+  { id: "qt2", title: "Quick 15-min stretch", xp: 10, isCompleted: true, subTasks: [], createdAt: "2024-07-30T08:00:00.000Z", category: "fitness", timeAllocation: 15, images: [], dataAiHints: [], notes: "" },
+  { id: "qt3", title: "Brainstorm ideas for pixel art character", xp: 15, isCompleted: false, subTasks: [], createdAt: "2024-07-30T14:00:00.000Z", category: "hobby", timeAllocation: 30, images: [], dataAiHints: [], notes:"Explore different color palettes. Try a cyberpunk theme."},
+  { id: "qt4", title: "Reply to important emails", xp: 20, isCompleted: false, subTasks: [], createdAt: "2024-07-30T09:00:00.000Z", category: "work", timeAllocation: 45, images: [], dataAiHints: [], notes: "Client X, Project Y follow-up." },
 ];
 
 interface DashboardPageProps {
@@ -44,18 +44,14 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [rivalXP, setRivalXP] = useState(1100);
   
-  const [inspirationImages, setInspirationImages] = useState<string[]>([
-      "https://source.unsplash.com/random/150x150/?pixel,character&sig=101",
-      "https://source.unsplash.com/random/150x150/?pixel,landscape&sig=102",
-      "https://source.unsplash.com/random/150x150/?8bit,item&sig=103",
-      "https://source.unsplash.com/random/150x150/?pixel,monster&sig=104"
-    ]);
-  const [inspirationDataAiHints, setInspirationDataAiHints] = useState<string[]>(["pixel character", "pixel landscape", "8bit item", "pixel monster"]);
-
-  const [showInspirationCamera, setShowInspirationCamera] = useState(false);
+  const [inspirationBoards, setInspirationBoards] = useState<InspirationBoard[]>([]);
+  const [newBoardTitle, setNewBoardTitle] = useState("");
+  const [showInspirationCameraForBoardId, setShowInspirationCameraForBoardId] = useState<string | null>(null);
   const [hasInspirationCameraPermission, setHasInspirationCameraPermission] = useState<boolean | null>(null);
   const [selectedInspirationImageForOverlay, setSelectedInspirationImageForOverlay] = useState<string | null>(null);
   const [isInspirationOverlayOpen, setIsInspirationOverlayOpen] = useState(false);
+  const [activeBoardForFileUpload, setActiveBoardForFileUpload] = useState<string | null>(null);
+
 
   const inspirationVideoRef = useRef<HTMLVideoElement>(null);
   const inspirationCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -121,7 +117,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
           const originalTaskCompleted = task.isCompleted;
           let updatedSubTasks = [...task.subTasks]; 
 
-          if (subTaskId) { // Toggling a subtask
+          if (subTaskId) { 
             updatedSubTasks = task.subTasks.map(st => {
               if (st.id === subTaskId) {
                 const originalSubTaskCompleted = st.isCompleted;
@@ -134,18 +130,15 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
             });
 
             const allSubtasksNowCompleted = updatedSubTasks.every(st => st.isCompleted);
-            // Main task becomes complete if all subtasks are done AND it wasn't already marked complete by user
-            // OR if it has no subtasks, its status is independent (this case is handled by else block)
             let newOverallCompletedStatus = task.isCompleted;
             if (task.subTasks.length > 0) {
                 newOverallCompletedStatus = allSubtasksNowCompleted;
             }
 
-
             if (newOverallCompletedStatus && !originalTaskCompleted && task.subTasks.length > 0) {
-              taskXPChange += task.xp; // Add main task XP if all subtasks complete it
+              taskXPChange += task.xp; 
             } else if (!newOverallCompletedStatus && originalTaskCompleted && task.subTasks.length > 0) {
-              taskXPChange -= task.xp; // Subtract main task XP if a subtask uncompletes it
+              taskXPChange -= task.xp; 
             }
             
             if (taskXPChange !== 0) {
@@ -153,25 +146,20 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
             }
             return { ...task, subTasks: updatedSubTasks, isCompleted: newOverallCompletedStatus };
 
-          } else { // Toggling main task
+          } else { 
             const newCompletedStatus = !task.isCompleted;
             if (newCompletedStatus && !originalTaskCompleted) taskXPChange += task.xp;
             if (!newCompletedStatus && originalTaskCompleted) taskXPChange -= task.xp;
             
             updatedSubTasks = newCompletedStatus ? task.subTasks.map(st => {
-                if(!st.isCompleted) taskXPChange += st.xp; // Add XP for subtasks now being auto-completed
+                if(!st.isCompleted) taskXPChange += st.xp; 
                 return {...st, isCompleted: true};
-            }) : task.subTasks; // If unchecking main task, subtasks retain their individual statuses
+            }) : task.subTasks; 
 
             if (taskXPChange !== 0) {
                 setUserXP(prevXP => prevXP + taskXPChange);
             }
-            // If unchecking main task, and all subtasks were completed, the main task remains completed.
-            // This logic is subtle: user unchecking main task overrides subtask-driven completion.
-            // But if main task is unchecked, subtasks are NOT auto-unchecked.
             const finalCompletedStatus = newCompletedStatus;
-
-
             return { ...task, isCompleted: finalCompletedStatus, subTasks: updatedSubTasks };
           }
         }
@@ -192,20 +180,11 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
           xp: currentSubtaskInput.xp || 0,
           isCompleted: false,
         };
-        // If adding a subtask makes the parent task incomplete (if it was complete because it had no subtasks)
-        // For now, let's assume adding a subtask doesn't change parent's completion status directly.
-        // Parent will become incomplete if it's currently complete & a subtask is added (as it's no longer "all subtasks complete")
-        let newParentCompletedStatus = task.isCompleted;
-        if(task.isCompleted && task.subTasks.length === 0) { // Was complete due to no subtasks
-             // Parent task may need to become incomplete if it was marked as complete before having subtasks
-             // This happens naturally if isCompleted relies on all subtasks being done.
-        }
-
-        return { ...task, subTasks: [...task.subTasks, newSub], isCompleted: false }; // Adding a new subtask makes parent incomplete
+        return { ...task, subTasks: [...task.subTasks, newSub], isCompleted: false }; 
       }
       return task;
     }));
-    setNewSubtaskData(prev => ({ ...prev, [taskId]: { title: "", xp: 5 } })); // Reset input
+    setNewSubtaskData(prev => ({ ...prev, [taskId]: { title: "", xp: 5 } })); 
   };
 
   const handleDeleteSubtask = (taskId: string, subTaskId: string) => {
@@ -214,40 +193,27 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
         const subtaskToDelete = task.subTasks.find(st => st.id === subTaskId);
         let xpChange = 0;
         if (subtaskToDelete && subtaskToDelete.isCompleted) {
-          xpChange -= subtaskToDelete.xp; // Subtract XP if deleted subtask was completed
+          xpChange -= subtaskToDelete.xp; 
         }
         
         const updatedSubTasks = task.subTasks.filter(st => st.id !== subTaskId);
-        
-        // Check if parent task needs to change completion status
         const wasParentCompleted = task.isCompleted;
-        const allRemainingSubtasksCompleted = updatedSubTasks.length > 0 ? updatedSubTasks.every(st => st.isCompleted) : true; // True if no subtasks left
+        const allRemainingSubtasksCompleted = updatedSubTasks.length > 0 ? updatedSubTasks.every(st => st.isCompleted) : true; 
         
         let newParentCompletedStatus = wasParentCompleted;
         if (updatedSubTasks.length > 0) {
             newParentCompletedStatus = allRemainingSubtasksCompleted;
-        } else { // No subtasks left
-            // If parent was completed due to all subtasks, and now there are no subtasks, it should remain completed based on its own merit or become incomplete if it was only due to subtasks
-            // Let's assume if no subtasks left, its original completion state (if any) or explicit toggle matters.
-            // For simplicity, if it becomes 0 subtasks, its completion doesn't auto-change here from this action.
-            // It should have been explicitly toggled before.
-            // If all subtasks are removed, and parent was completed, it should remain completed unless it was only completed due to subtasks.
-            // If parent was completed AND all subtasks were completed, and then all subtasks are deleted -> parent should remain completed.
-            // If parent was completed SOLELY because all subtasks were completed, and then last subtask is deleted -> parent status logic is tricky.
-            // The easiest is: parent's completion is only affected by adding/toggling, not by deleting last subtask.
-             newParentCompletedStatus = allRemainingSubtasksCompleted ? task.isCompleted : false; // Becomes complete if all remaining are complete, or incomplete
+        } else {
+             newParentCompletedStatus = allRemainingSubtasksCompleted ? task.isCompleted : false; 
         }
 
-
-        if (newParentCompletedStatus && !wasParentCompleted && updatedSubTasks.length > 0) { // Gained completion
+        if (newParentCompletedStatus && !wasParentCompleted && updatedSubTasks.length > 0) { 
           xpChange += task.xp;
-        } else if (!newParentCompletedStatus && wasParentCompleted && updatedSubTasks.length > 0) { // Lost completion
-           // Only subtract parent XP if it was completed *because* of subtasks
-           if(task.subTasks.every(st => st.isCompleted)){ // Check original subtasks
+        } else if (!newParentCompletedStatus && wasParentCompleted && updatedSubTasks.length > 0) { 
+           if(task.subTasks.every(st => st.isCompleted)){ 
              xpChange -= task.xp;
            }
         }
-
 
         if (xpChange !== 0) {
           setUserXP(prevXP => prevXP + xpChange);
@@ -258,13 +224,11 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     }));
   };
 
-
   const totalPossibleXP = tasks.reduce((sum, task) => sum + task.xp + task.subTasks.reduce((subSum, st) => subSum + st.xp, 0), 0);
   const completedXP = tasks.reduce((sum, task) => {
     let currentTaskXP = 0;
     if (task.isCompleted) {
         currentTaskXP += task.xp;
-         // Add subtask XP only if parent is complete, assuming they are auto-completed with parent
         currentTaskXP += task.subTasks.filter(st => st.isCompleted).reduce((subSum, st) => subSum + st.xp, 0);
     } else {
         currentTaskXP += task.subTasks.filter(st => st.isCompleted).reduce((subSum, st) => subSum + st.xp, 0);
@@ -273,24 +237,59 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
   }, 0);
   const progressPercentage = totalPossibleXP > 0 ? (completedXP / totalPossibleXP) * 100 : 0;
 
-
-  const handleInspirationImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      for (let i = 0; i < event.target.files.length; i++) {
-        const file = event.target.files[i];
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setInspirationImages(prev => [...prev, reader.result as string]);
-          setInspirationDataAiHints(prev => [...prev, "custom upload"]);
-        };
-        reader.readAsDataURL(file);
-      }
-      if(event.target) event.target.value = "";
+  // Inspiration Board Logic
+  const handleAddInspirationBoard = () => {
+    if (newBoardTitle.trim() === "") {
+      toast({ title: "Board Title Needed", description: "Please enter a title for your new inspiration board.", variant: "destructive", className: "text-xs glassmorphic"});
+      return;
     }
+    const newBoard: InspirationBoard = {
+      id: String(Date.now()),
+      title: newBoardTitle.trim(),
+      images: [],
+    };
+    setInspirationBoards(prev => [...prev, newBoard]);
+    setNewBoardTitle("");
+    toast({title: "Board Created!", description: `"${newBoard.title}" is ready for your inspirations.`, className: "text-xs glassmorphic"});
   };
 
-  const startInspirationCamera = async () => {
-    setShowInspirationCamera(true);
+  const handleDeleteInspirationBoard = (boardId: string) => {
+    setInspirationBoards(prev => prev.filter(board => board.id !== boardId));
+    toast({ title: "Board Deleted", variant: "destructive", className: "text-xs glassmorphic" });
+  };
+
+  const handleInspirationImageUpload = (event: React.ChangeEvent<HTMLInputElement>, boardId: string) => {
+    if (event.target.files) {
+      const filesArray = Array.from(event.target.files);
+      filesArray.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const newImage: InspirationImage = {
+            id: String(Date.now()) + Math.random(), // Ensure unique ID
+            src: reader.result as string,
+            dataAiHint: "custom upload",
+          };
+          setInspirationBoards(prevBoards =>
+            prevBoards.map(board =>
+              board.id === boardId ? { ...board, images: [...board.images, newImage] } : board
+            )
+          );
+        };
+        reader.readAsDataURL(file);
+      });
+      if(event.target) event.target.value = ""; // Reset file input
+    }
+    setActiveBoardForFileUpload(null); // Reset active board after upload
+  };
+
+  const triggerInspirationFileUpload = (boardId: string) => {
+    setActiveBoardForFileUpload(boardId);
+    inspirationFileRef.current?.click();
+  };
+
+
+  const startInspirationCamera = async (boardId: string) => {
+    setShowInspirationCameraForBoardId(boardId);
     setHasInspirationCameraPermission(null);
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -302,20 +301,29 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     } catch (error) {
       setHasInspirationCameraPermission(false);
       toast({ variant: 'destructive', title: 'Camera Access Denied', description: 'Please enable camera permissions.'});
-      setShowInspirationCamera(false);
+      setShowInspirationCameraForBoardId(null);
     }
   };
 
   const captureInspirationImage = () => {
-    if (inspirationVideoRef.current && inspirationCanvasRef.current) {
+    if (inspirationVideoRef.current && inspirationCanvasRef.current && showInspirationCameraForBoardId) {
+      const boardId = showInspirationCameraForBoardId;
       const video = inspirationVideoRef.current;
       const canvas = inspirationCanvasRef.current;
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       const dataUri = canvas.toDataURL('image/png');
-      setInspirationImages(prev => [...prev, dataUri]);
-      setInspirationDataAiHints(prev => [...prev, "camera capture"]); 
+      const newImage: InspirationImage = {
+        id: String(Date.now()),
+        src: dataUri,
+        dataAiHint: "camera capture",
+      };
+      setInspirationBoards(prevBoards =>
+        prevBoards.map(board =>
+          board.id === boardId ? { ...board, images: [...board.images, newImage] } : board
+        )
+      );
       stopInspirationCamera();
     }
   };
@@ -325,12 +333,15 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
       inspirationStreamRef.current.getTracks().forEach(track => track.stop());
     }
     inspirationStreamRef.current = null;
-    setShowInspirationCamera(false);
+    setShowInspirationCameraForBoardId(null);
   };
 
-  const removeInspirationImage = (index: number) => {
-    setInspirationImages(prev => prev.filter((_, i) => i !== index));
-    setInspirationDataAiHints(prev => prev.filter((_, i) => i !== index));
+  const removeInspirationImage = (boardId: string, imageId: string) => {
+    setInspirationBoards(prevBoards =>
+      prevBoards.map(board =>
+        board.id === boardId ? { ...board, images: board.images.filter(img => img.id !== imageId) } : board
+      )
+    );
   };
 
   const openInspirationImageInOverlay = (imageSrc: string) => {
@@ -600,11 +611,11 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                   </div>
                 </div>
                 <AccordionContent className="pt-2.5 mt-2.5 border-t border-border/30">
-                 <div className="space-y-3"> {/* Wrapper for all content sections */}
+                 <div className="space-y-3"> 
                     {((task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id) && (
                       <div className="flex flex-col sm:flex-row gap-2.5">
                         <div className={`flex flex-col ${task.notes && task.notes.trim() !== "" || editingNotesTaskId === task.id ? 'sm:w-2/3' : 'w-full'}`}>
-                          <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center"><ImageIcon className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Images:</h4>
+                          <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center"><ImageIconLucide className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Images:</h4>
                           {task.images && task.images.length > 0 && (
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
                               {task.images.map((src, idx) => (
@@ -643,7 +654,6 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                           </Button>
                         </div>
                         
-
                         {(task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id ? (
                           <div className={`flex flex-col ${task.images && task.images.length > 0 ? 'sm:w-1/3' : 'w-full mt-2.5 sm:mt-0'} flex-grow`}>
                             <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center shrink-0"><BookOpen className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Notes:</h4>
@@ -685,7 +695,6 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                       </div>
                     )}
 
-                    {/* Sub-tasks section */}
                     <div className={`${((task.images && task.images.length > 0) || (task.notes && task.notes.trim() !== "") || editingNotesTaskId === task.id) ? 'mt-2.5 pt-2.5 border-t border-border/30' : ''}`}>
                       <h4 className="text-sm md:text-base font-semibold text-accent mb-2 flex items-center">
                         <ListChecks className="h-4 w-4 md:h-5 md:w-5 mr-2"/>Sub-Quests
@@ -796,75 +805,120 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
       
       <GlassCard>
         <CardHeader className="p-4 md:p-5">
-           <h3 className="font-pixel text-lg md:text-xl text-primary flex items-center"><ImageIcon className="mr-2.5 h-5 w-5 md:h-6 md:w-6" />My Game Art Inspirations</h3>
+           <h3 className="font-pixel text-lg md:text-xl text-primary flex items-center"><Brain className="mr-2.5 h-5 w-5 md:h-6 md:w-6" />Work Inspirations</h3>
         </CardHeader>
         <CardContent className="p-4 md:p-5 pt-0">
-          <div className="space-y-4">
-            {inspirationImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 mt-2.5">
-                {inspirationImages.map((src, index) => (
-                  <div key={index} className="relative group aspect-square">
-                    <img 
-                      src={src} 
-                      alt={`Inspiration ${index + 1}`} 
-                      data-ai-hint={inspirationDataAiHints[index] || "inspiration"}
-                      className="w-full h-full object-cover rounded-md cursor-pointer border border-accent/30 hover:opacity-80 transition-opacity"
-                      onClick={() => openInspirationImageInOverlay(src)}
-                    />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 h-6 w-6 p-1 opacity-50 group-hover:opacity-100 transition-opacity z-10"
-                      onClick={() => removeInspirationImage(index)}
-                    >
-                      <XCircle className="h-4 w-4" />
+          <div className="flex gap-2 mb-4">
+            <Input 
+              type="text"
+              placeholder="New Inspiration Board Title..."
+              value={newBoardTitle}
+              onChange={(e) => setNewBoardTitle(e.target.value)}
+              className="font-mono bg-background/50 border-primary/50 focus:border-accent h-9 text-sm"
+            />
+            <Button onClick={handleAddInspirationBoard} size="sm" className="bg-primary hover:bg-primary/80 h-9 text-xs">
+              <PlusCircle className="mr-1.5 h-4 w-4"/> Add Board
+            </Button>
+          </div>
+
+          {inspirationBoards.length === 0 && !showInspirationCameraForBoardId && (
+            <p className="text-center text-muted-foreground py-4 text-sm">No inspiration boards yet. Create one to start adding images!</p>
+          )}
+
+          {inspirationBoards.map(board => (
+            <GlassCard key={board.id} className="p-3 mb-4 border-accent/30">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-pixel text-md text-accent">{board.title}</h4>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-7 w-7">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="font-mono glassmorphic">
+                        <AlertDialogHeader>
+                        <AlertDialogTitle className="font-pixel text-destructive">Delete Board</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm">
+                            Are you sure you want to delete the board "{board.title}" and all its images? This cannot be undone.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel className="text-xs h-8">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => handleDeleteInspirationBoard(board.id)}
+                            className="text-xs h-8 bg-destructive hover:bg-destructive/80"
+                        >
+                            Delete Board
+                        </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
+              {board.images.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-3">
+                  {board.images.map((img) => (
+                    <div key={img.id} className="relative group aspect-square">
+                      <img 
+                        src={img.src} 
+                        alt={`Inspiration for ${board.title}`} 
+                        data-ai-hint={img.dataAiHint}
+                        className="w-full h-full object-cover rounded-md cursor-pointer border border-accent/30 hover:opacity-80 transition-opacity"
+                        onClick={() => openInspirationImageInOverlay(img.src)}
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1.5 right-1.5 h-6 w-6 p-1 opacity-50 group-hover:opacity-100 transition-opacity z-10"
+                        onClick={() => removeInspirationImage(board.id, img.id)}
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {(board.images.length === 0 && showInspirationCameraForBoardId !== board.id) && (
+                 <p className="text-center text-muted-foreground py-3 text-xs">This board is empty. Add some images!</p>
+              )}
+
+              {showInspirationCameraForBoardId === board.id && (
+                <div className="space-y-2.5 my-2">
+                  <video ref={inspirationVideoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
+                  {hasInspirationCameraPermission === false && (
+                      <Alert variant="destructive" className="text-sm py-2 px-2.5">
+                          <Camera className="h-4 w-4" />
+                          <AlertTitle className="text-sm font-semibold">Camera Access Denied</AlertTitle>
+                          <AlertDescription className="text-sm">Enable camera permissions.</AlertDescription>
+                      </Alert>
+                  )}
+                  {hasInspirationCameraPermission === null && <p className="text-sm text-muted-foreground text-center">Requesting camera...</p>}
+                  <div className="flex gap-2.5">
+                    <Button onClick={captureInspirationImage} size="default" className="flex-1 h-9 text-sm" disabled={hasInspirationCameraPermission !== true}>
+                      <Camera className="mr-2 h-4 w-4" /> Capture
+                    </Button>
+                    <Button variant="outline" onClick={stopInspirationCamera} size="default" className="flex-1 h-9 text-sm">
+                      Cancel
                     </Button>
                   </div>
-                ))}
-              </div>
-            )}
-            
-            {(inspirationImages.length === 0 && !showInspirationCamera) && (
-              <div className="text-center py-4 text-muted-foreground text-sm md:text-base">
-                No inspiration images. Upload or capture some!
-              </div>
-            )}
+                </div>
+              )}
 
-            {showInspirationCamera && (
-              <div className="space-y-2.5">
-                <video ref={inspirationVideoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
-                {hasInspirationCameraPermission === false && (
-                    <Alert variant="destructive" className="text-sm py-2 px-2.5">
-                        <Camera className="h-4 w-4" />
-                        <AlertTitle className="text-sm font-semibold">Camera Access Denied</AlertTitle>
-                        <AlertDescription className="text-sm">Enable camera permissions.</AlertDescription>
-                    </Alert>
-                )}
-                 {hasInspirationCameraPermission === null && <p className="text-sm md:text-base text-muted-foreground text-center">Requesting camera...</p>}
-                <div className="flex gap-2.5">
-                  <Button onClick={captureInspirationImage} size="default" className="flex-1 h-9 text-sm md:text-base" disabled={hasInspirationCameraPermission !== true}>
-                    <Camera className="mr-2 h-4 w-4" /> Capture
+              {showInspirationCameraForBoardId !== board.id && (
+                <div className="flex flex-col sm:flex-row gap-2.5 mt-2">
+                  <Button onClick={() => triggerInspirationFileUpload(board.id)} size="sm" variant="outline" className="flex-1 h-8 text-xs">
+                    <Upload className="mr-2 h-3.5 w-3.5" /> Upload to this Board
                   </Button>
-                  <Button variant="outline" onClick={stopInspirationCamera} size="default" className="flex-1 h-9 text-sm md:text-base">
-                    Cancel
+                  <Button onClick={() => startInspirationCamera(board.id)} size="sm" variant="outline" className="flex-1 h-8 text-xs">
+                    <Camera className="mr-2 h-3.5 w-3.5" /> Camera for this Board
                   </Button>
                 </div>
-              </div>
-            )}
-            <canvas ref={inspirationCanvasRef} className="hidden"></canvas>
-
-            {!showInspirationCamera && (
-              <div className="flex flex-col sm:flex-row gap-2.5">
-                <Button onClick={() => inspirationFileRef.current?.click()} size="default" variant="outline" className="flex-1 h-9 text-sm md:text-base">
-                  <Upload className="mr-2 h-4 w-4" /> Upload Image
-                </Button>
-                <Input type="file" ref={inspirationFileRef} onChange={handleInspirationImageUpload} accept="image/*" className="hidden" multiple />
-                <Button onClick={startInspirationCamera} size="default" variant="outline" className="flex-1 h-9 text-sm md:text-base">
-                  <Camera className="mr-2 h-4 w-4" /> Use Camera
-                </Button>
-              </div>
-            )}
-          </div>
+              )}
+            </GlassCard>
+          ))}
+          <Input type="file" ref={inspirationFileRef} onChange={(e) => activeBoardForFileUpload && handleInspirationImageUpload(e, activeBoardForFileUpload)} accept="image/*" className="hidden" multiple />
+          <canvas ref={inspirationCanvasRef} className="hidden"></canvas>
         </CardContent>
       </GlassCard>
 
@@ -901,7 +955,7 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
                 <Textarea id="edit-task-notes" name="notes" value={editTaskFormData.notes || ''} onChange={handleEditTaskFormChange} className="text-sm bg-card/50 border-primary/30 min-h-[70px]" rows={2}/>
               </div>
               <div className="space-y-1">
-                <Label className="flex items-center"><ImageIcon className="h-3.5 w-3.5 mr-1.5"/>Images ({editTaskFormData.images?.length || 0})</Label>
+                <Label className="flex items-center"><ImageIconLucide className="h-3.5 w-3.5 mr-1.5"/>Images ({editTaskFormData.images?.length || 0})</Label>
                 {editTaskFormData.images && editTaskFormData.images.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 mb-1 p-1 bg-black/10 rounded border border-border/20 max-h-28 overflow-y-auto">
                     {editTaskFormData.images.map((src, index) => (
@@ -981,4 +1035,3 @@ export default function DashboardPage({ userXP = 0, setUserXP = () => {} }: Dash
     </div>
   );
 }
-
