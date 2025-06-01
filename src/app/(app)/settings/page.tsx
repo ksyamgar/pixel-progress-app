@@ -3,6 +3,7 @@
 
 import type { Dispatch, SetStateAction } from 'react';
 import { RivalConfigForm } from "@/components/rival/rival-config-form";
+import { UserProfileSettingsForm } from "@/components/settings/user-profile-settings-form"; // New import
 import { GlassCard } from "@/components/shared/glass-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,22 +17,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Settings, Bot, RotateCcw, AlertTriangle } from "lucide-react";
+import { Settings, Bot, RotateCcw, AlertTriangle, User } from "lucide-react"; // Added User
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 
 interface SettingsPageProps {
   setUserXP?: Dispatch<SetStateAction<number>>;
+  userName?: string; // From AppLayout, for display
+  userAvatar?: string; // From AppLayout
+  setUserAvatar?: Dispatch<SetStateAction<string>>; // Setter from AppLayout
+  setAppUserName?: Dispatch<SetStateAction<string>>; // Setter from AppLayout for name
 }
 
-export default function SettingsPage({ setUserXP = () => {} }: SettingsPageProps) {
+export default function SettingsPage({ 
+  setUserXP = () => {},
+  userName = "Pixel User",
+  userAvatar = "https://placehold.co/60x60.png",
+  setUserAvatar = () => {},
+  setAppUserName = () => {},
+}: SettingsPageProps) {
   const { toast } = useToast();
 
   const handleFullReset = () => {
     setUserXP(0);
-    // Note: This reset primarily affects global userXP.
-    // Task lists on Dashboard/Goals pages are managed by their own local state.
-    // Users would need to clear those manually if they want those lists emptied immediately.
     toast({
       title: "Full Progress Reset!",
       description: "Your XP has been reset to 0. Quests on dashboard/goals pages may need manual clearing.",
@@ -53,6 +61,16 @@ export default function SettingsPage({ setUserXP = () => {} }: SettingsPageProps
         </p>
       </GlassCard>
 
+      {/* User Profile Settings Section */}
+      <UserProfileSettingsForm
+        userAvatarState={userAvatar}
+        setUserAvatarState={setUserAvatar}
+        currentUserNameState={userName}
+        setCurrentUserNameStateGlobal={setAppUserName}
+      />
+      
+      <Separator className="my-6 bg-border/30" />
+
       <GlassCard className="p-4">
         <h2 className="text-xl font-pixel text-accent mb-3 flex items-center">
           <Bot className="mr-2 h-6 w-6" />
@@ -60,6 +78,8 @@ export default function SettingsPage({ setUserXP = () => {} }: SettingsPageProps
         </h2>
         <RivalConfigForm />
       </GlassCard>
+      
+      <Separator className="my-6 bg-border/30" />
 
       <GlassCard className="p-4 border-destructive/30">
         <h2 className="text-xl font-pixel text-destructive mb-3 flex items-center">

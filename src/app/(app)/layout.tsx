@@ -29,8 +29,8 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const [userAvatar, setUserAvatar] = useState("https://placehold.co/60x60.png");
-  const [currentUserName, setCurrentUserName] = useState("Pixel User"); // Renamed to avoid conflict with user prop
-  const [isEditingName, setIsEditingName] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState("Pixel User");
+  const [isEditingNameInSidebar, setIsEditingNameInSidebar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [userXP, setUserXP] = useState(1250);
 
@@ -43,51 +43,52 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) {
       setCurrentUserName(user.displayName || user.email || "Pixel User");
-      // Potentially load avatar from user.photoURL if available
-      // if (user.photoURL) setUserAvatar(user.photoURL);
+      if (user.photoURL) setUserAvatar(user.photoURL);
+      else setUserAvatar("https://placehold.co/60x60.png");
     } else {
-      setCurrentUserName("Pixel User"); // Reset if user logs out
+      setCurrentUserName("Pixel User");
       setUserAvatar("https://placehold.co/60x60.png");
     }
   }, [user]);
 
 
   const handleAvatarClick = () => {
-    if (isEditingName) return;
+    if (isEditingNameInSidebar) return;
     avatarInputRef.current?.click();
   };
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChangeInSidebar = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
         setUserAvatar(reader.result as string);
         // TODO: If user is logged in, offer to save this to their Firebase profile
+        // if (user) { user.updateProfile({ photoURL: reader.result as string }); }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleUserNameSave = (newName: string) => {
+  const handleUserNameSaveInSidebar = (newName: string) => {
     const finalName = newName.trim() === "" ? (user?.email || "Pixel User") : newName.trim();
     setCurrentUserName(finalName);
-    setIsEditingName(false);
+    setIsEditingNameInSidebar(false);
     // TODO: If user is logged in, offer to save this (user.updateProfile({displayName: finalName}))
+    // if (user) { user.updateProfile({ displayName: finalName }); }
   };
 
-  const handleUserNameKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleUserNameKeyDownInSidebar = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      handleUserNameSave((event.target as HTMLInputElement).value);
+      handleUserNameSaveInSidebar((event.target as HTMLInputElement).value);
       event.preventDefault();
     } else if (event.key === 'Escape') {
-      setIsEditingName(false);
+      setIsEditingNameInSidebar(false);
     }
   };
 
   const handleLogout = async () => {
     await logout();
-    // setUserXP(0); // Reset local XP on logout, or handle this based on app logic
   };
 
   if (authLoading) {
@@ -99,7 +100,6 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
   }
 
   if (!user && pathname !== '/login' && pathname !== '/signup') {
-     // This will be caught by useEffect and redirect, but as a fallback
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p className="text-foreground">Redirecting to login...</p>
@@ -108,7 +108,7 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
     );
   }
   
-  if (!user) return null; // Should be redirected by now
+  if (!user) return null;
 
   return (
     <>
@@ -144,17 +144,17 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
             <input
               type="file"
               ref={avatarInputRef}
-              onChange={handleAvatarChange}
+              onChange={handleAvatarChangeInSidebar}
               accept="image/*"
               className="hidden"
             />
              <div className="flex items-center gap-0.5 mt-0.5 group-data-[collapsible=icon]:hidden">
-              {isEditingName ? (
+              {isEditingNameInSidebar ? (
                 <Input
                   type="text"
                   defaultValue={currentUserName}
-                  onBlur={(e) => handleUserNameSave(e.target.value)}
-                  onKeyDown={handleUserNameKeyDown}
+                  onBlur={(e) => handleUserNameSaveInSidebar(e.target.value)}
+                  onKeyDown={handleUserNameKeyDownInSidebar}
                   autoFocus
                   className="font-pixel text-sm h-6 bg-card/70 border-primary/50 text-primary text-center"
                   style={{ minWidth: '80px', maxWidth: '120px' }}
@@ -162,8 +162,8 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
               ) : (
                 <div className="font-pixel text-sm font-bold text-primary truncate max-w-[120px]">{currentUserName}</div>
               )}
-              {!isEditingName && (
-                <Button variant="ghost" size="icon" onClick={() => setIsEditingName(true)} className="h-5 w-5 p-0.5">
+              {!isEditingNameInSidebar && (
+                <Button variant="ghost" size="icon" onClick={() => setIsEditingNameInSidebar(true)} className="h-5 w-5 p-0.5">
                   <Edit2 className="h-2.5 w-2.5 text-primary/70 hover:text-primary" />
                 </Button>
               )}
@@ -186,7 +186,14 @@ function MainAppLayoutContent({ children }: { children: ReactNode }) {
           {React.Children.map(children, (child) => {
             if (React.isValidElement(child)) {
               // @ts-ignore
-              return React.cloneElement(child, { userXP, setUserXP, userName: currentUserName });
+              return React.cloneElement(child, { 
+                userXP, 
+                setUserXP, 
+                userName: currentUserName, // Prop for displaying name
+                userAvatar,               // Prop for displaying avatar
+                setUserAvatar,            // Setter for avatar
+                setAppUserName: setCurrentUserName, // Setter for application-wide user name
+               });
             }
             return child;
           })}
