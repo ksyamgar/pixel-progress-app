@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Target, ShieldAlert, CalendarDays, Settings2, LucideIcon } from "lucide-react";
+import { Home, Target, CalendarDays, Settings2, LucideIcon } from "lucide-react";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +16,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/goals", label: "Goals", icon: Target },
-  { href: "/rival", label: "AI Rival", icon: ShieldAlert },
   { href: "/history", label: "History", icon: CalendarDays },
-  // { href: "/settings", label: "Settings", icon: Settings2 }, // Example for future
+  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 export function SidebarNav() {
@@ -51,5 +50,3 @@ export function SidebarNav() {
     </SidebarMenu>
   );
 }
-
-    
