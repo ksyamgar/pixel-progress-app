@@ -12,29 +12,32 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from "@/hooks/use-toast";
 
 interface UserProfileSettingsFormProps {
-  userAvatarState: string;
-  setUserAvatarState: (avatar: string) => void;
-  currentUserNameState: string;
-  setCurrentUserNameStateGlobal: (name: string) => void; 
+  currentAvatarFromLayout: string;
+  updateGlobalAvatar: (avatar: string) => void;
+  currentNameFromLayout: string;
+  updateGlobalName: (name: string) => void; 
 }
 
 export function UserProfileSettingsForm({
-  userAvatarState,
-  setUserAvatarState,
-  currentUserNameState,
-  setCurrentUserNameStateGlobal,
+  currentAvatarFromLayout,
+  updateGlobalAvatar,
+  currentNameFromLayout,
+  updateGlobalName,
 }: UserProfileSettingsFormProps) {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth(); // Get user for email display
   const { toast } = useToast();
 
-  const [editingName, setEditingName] = useState(false);
-  const [nameInputValue, setNameInputValue] = useState(currentUserNameState);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameInputValue, setNameInputValue] = useState(currentNameFromLayout); // Local state for the input field
   const avatarFileRef = useRef<HTMLInputElement>(null);
 
-  // Effect to synchronize local nameInputValue with the global currentUserNameState prop
+  // Effect to synchronize local nameInputValue with the global currentNameFromLayout prop
+  // This ensures if the name is changed via sidebar, settings form reflects it when not in edit mode
   useEffect(() => {
-    setNameInputValue(currentUserNameState);
-  }, [currentUserNameState]);
+    if (!isEditingName) { // Only update if not actively editing to avoid disrupting user input
+        setNameInputValue(currentNameFromLayout);
+    }
+  }, [currentNameFromLayout, isEditingName]);
 
   const handleAvatarUploadClick = () => {
     avatarFileRef.current?.click();
@@ -46,33 +49,31 @@ export function UserProfileSettingsForm({
       const reader = new FileReader();
       reader.onloadend = () => {
         const newAvatarSrc = reader.result as string;
-        setUserAvatarState(newAvatarSrc); // Update global state
-        toast({ title: "Avatar Updated", description: "Your new avatar is set. (Persistence not yet implemented for Firebase)", className: "glassmorphic font-mono text-xs" });
-        // TODO: Persist to Firebase user.photoURL 
-        // if (user) { user.updateProfile({ photoURL: newAvatarSrc }).then(() => toast({...})).catch(err => toast({...})); }
+        updateGlobalAvatar(newAvatarSrc); // Call the setter from AppLayout
+        toast({ title: "Avatar Updated", description: "Your new avatar is set locally.", className: "glassmorphic font-mono text-xs" });
+        // TODO: Persist to Firebase user.updateProfile({ photoURL: newAvatarSrc })
       };
       reader.readAsDataURL(file);
     }
   };
-
+  
   const handleNameEditToggle = () => {
-    if (editingName) {
-      // If currently editing, save the name
+    if (isEditingName) {
+      // If currently editing, try to save the name
       saveName();
     } else {
       // If not editing, set the input value to the current global name before enabling edit mode
-      setNameInputValue(currentUserNameState); 
+      setNameInputValue(currentNameFromLayout); 
+      setIsEditingName(true); // Enter edit mode
     }
-    setEditingName(!editingName); // Toggle editing mode
   };
   
   const saveName = () => {
     const finalName = nameInputValue.trim() === "" ? (user?.email || "Pixel User") : nameInputValue.trim();
-    setCurrentUserNameStateGlobal(finalName); // Update global state
-    setEditingName(false);
-    toast({ title: "Display Name Updated", description: `Your name is now "${finalName}". (Persistence not yet implemented for Firebase)`, className: "glassmorphic font-mono text-xs" });
-    // TODO: Persist to Firebase user.displayName
-    // if (user) { user.updateProfile({ displayName: finalName }).then(() => toast({...})).catch(err => toast({...})); }
+    updateGlobalName(finalName); // Call the setter from AppLayout
+    setIsEditingName(false); // Exit edit mode
+    toast({ title: "Display Name Updated", description: `Your name is now "${finalName}" locally.`, className: "glassmorphic font-mono text-xs" });
+    // TODO: Persist to Firebase user.updateProfile({ displayName: finalName })
   };
 
   const handleNameInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,10 +83,10 @@ export function UserProfileSettingsForm({
   const handleNameInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       saveName();
-      event.preventDefault(); // Prevent form submission if wrapped in one
+      event.preventDefault(); 
     } else if (event.key === 'Escape') {
-      setEditingName(false);
-      setNameInputValue(currentUserNameState); // Reset to original on escape
+      setNameInputValue(currentNameFromLayout); // Reset to original on escape
+      setIsEditingName(false);
     }
   };
 
@@ -100,7 +101,7 @@ export function UserProfileSettingsForm({
           <Label className="text-sm font-medium text-primary-foreground/80">Profile Picture</Label>
           <div className="mt-2 flex items-center gap-4 flex-wrap">
             <Image
-              src={userAvatarState} // Use the global avatar state
+              src={currentAvatarFromLayout} // Use the prop from AppLayout
               alt="User Avatar"
               data-ai-hint="pixel game avatar"
               width={80}
@@ -123,25 +124,35 @@ export function UserProfileSettingsForm({
         <div>
           <Label htmlFor="displayName" className="text-sm font-medium text-primary-foreground/80">Display Name</Label>
           <div className="mt-2 flex items-center gap-2">
-            {editingName ? (
+            {isEditingName ? (
               <Input
                 id="displayName"
                 type="text"
-                value={nameInputValue} // Controlled by local state, synced with global via useEffect
+                value={nameInputValue} 
                 onChange={handleNameInputChange}
                 onKeyDown={handleNameInputKeyDown}
-                onBlur={() => { if(editingName) { /* Consider if save on blur is desired, or rely on Save button */ } }} 
+                onBlur={() => { 
+                    // To prevent saving on blur if user clicks "Save" button immediately
+                    // We rely on the Save button or Enter key for explicit save
+                    // If you want save on blur:
+                    // if (isEditingName && nameInputValue !== currentNameFromLayout) saveName(); else setIsEditingName(false);
+                }} 
                 autoFocus
                 className="bg-card/70 border-primary/50 text-primary h-9 flex-grow"
               />
             ) : (
               <p className="text-lg text-primary-foreground flex-grow py-1.5 px-3 rounded-md bg-card/30 border border-transparent h-9 flex items-center min-h-[36px]">
-                {currentUserNameState} {/* Display global name state */}
+                {currentNameFromLayout} {/* Display prop from AppLayout */}
               </p>
             )}
-            <Button variant={editingName ? "default" : "outline"} onClick={handleNameEditToggle} size="sm" className="h-9">
-              {editingName ? <Save className="mr-1.5 h-4 w-4" /> : <Edit2 className="mr-1.5 h-4 w-4" />}
-              {editingName ? 'Save' : 'Edit'}
+            <Button 
+              variant={isEditingName ? "default" : "outline"} 
+              onClick={handleNameEditToggle} 
+              size="sm" 
+              className="h-9"
+            >
+              {isEditingName ? <Save className="mr-1.5 h-4 w-4" /> : <Edit2 className="mr-1.5 h-4 w-4" />}
+              {isEditingName ? 'Save' : 'Edit'}
             </Button>
           </div>
         </div>

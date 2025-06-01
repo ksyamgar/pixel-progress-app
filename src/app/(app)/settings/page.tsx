@@ -23,23 +23,28 @@ import { Separator } from '@/components/ui/separator';
 
 interface SettingsPageProps {
   setUserXP?: Dispatch<SetStateAction<number>>;
-  userName?: string; 
-  userAvatar?: string; 
-  setUserAvatar?: Dispatch<SetStateAction<string>>; 
-  setAppUserName?: Dispatch<SetStateAction<string>>; 
+  // Props received from AppLayout for user profile
+  layoutUserName?: string; 
+  layoutUserAvatar?: string; 
+  setLayoutUserName?: Dispatch<SetStateAction<string>>; 
+  setLayoutUserAvatar?: Dispatch<SetStateAction<string>>; 
 }
 
 export default function SettingsPage({ 
   setUserXP = () => {},
-  userName = "Pixel User",
-  userAvatar = "https://placehold.co/60x60.png",
-  setUserAvatar = () => {},
-  setAppUserName = () => {},
+  layoutUserName = "Pixel User", // Default if prop not passed
+  layoutUserAvatar = "https://placehold.co/60x60.png", // Default
+  setLayoutUserName = () => {},
+  setLayoutUserAvatar = () => {},
 }: SettingsPageProps) {
   const { toast } = useToast();
 
   const handleFullReset = () => {
     setUserXP(0);
+    // Optionally, could also reset local name/avatar if desired,
+    // but typically this would be separate from a progress reset.
+    // setLayoutUserName("Pixel User");
+    // setLayoutUserAvatar("https://placehold.co/60x60.png");
     toast({
       title: "Full Progress Reset!",
       description: "Your XP has been reset to 0. Quests on dashboard/goals pages may need manual clearing.",
@@ -64,14 +69,15 @@ export default function SettingsPage({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* User Profile Settings Section */}
         <UserProfileSettingsForm
-          userAvatarState={userAvatar}
-          setUserAvatarState={setUserAvatar}
-          currentUserNameState={userName}
-          setCurrentUserNameStateGlobal={setAppUserName}
+          // Pass the props from AppLayout down
+          currentNameFromLayout={layoutUserName}
+          currentAvatarFromLayout={layoutUserAvatar}
+          updateGlobalName={setLayoutUserName}
+          updateGlobalAvatar={setLayoutUserAvatar}
         />
         
         {/* AI Rival Configuration Section */}
-        <GlassCard className="p-4 h-fit"> {/* Added h-fit to ensure this card doesn't stretch unnecessarily */}
+        <GlassCard className="p-4 h-fit"> 
           <h2 className="text-xl font-pixel text-accent mb-3 flex items-center">
             <Bot className="mr-2 h-6 w-6" />
             AI Rival Configuration
